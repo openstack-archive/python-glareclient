@@ -1,0 +1,25 @@
+_glare_opts="" # lazy init
+_glare_flags="" # lazy init
+_glare_opts_exp="" # lazy init
+_glare()
+{
+    local cur prev nbc cflags
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [ "x$_glare_opts" == "x" ] ; then
+        nbc="`glare bash-completion | sed -e "s/  *-h  */ /" -e "s/  *-i  */ /"`"
+        _glare_opts="`echo "$nbc" | sed -e "s/--[a-z0-9_-]*//g" -e "s/  */ /g"`"
+        _glare_flags="`echo " $nbc" | sed -e "s/ [^-][^-][a-z0-9_-]*//g" -e "s/  */ /g"`"
+        _glare_opts_exp="`echo "$_glare_opts" | sed 's/^ *//' | tr ' ' '|'`"
+    fi
+
+    if [[ " ${COMP_WORDS[@]} " =~ " "($_glare_opts_exp)" " && "$prev" != "help" ]] ; then
+        COMPREPLY=($(compgen -W "${_glare_flags}" -- ${cur}))
+    else
+        COMPREPLY=($(compgen -W "${_glare_opts}" -- ${cur}))
+    fi
+    return 0
+}
+complete -F _glare glare

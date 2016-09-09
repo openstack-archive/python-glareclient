@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = glareclient
+omit = glareclient/openstack/*
+
+[report]
+ignore_errors = True
