@@ -287,7 +287,7 @@ class DeactivateArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.deactivete(parsed_args.id,
+        data = client.artifacts.deactivate(parsed_args.id,
                                            type_name=parsed_args.type_name)
         return self.dict2columns(data)
 
@@ -313,7 +313,7 @@ class ReactivateArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.reactivete(parsed_args.id,
+        data = client.artifacts.reactivate(parsed_args.id,
                                            type_name=parsed_args.type_name)
         return self.dict2columns(data)
 
