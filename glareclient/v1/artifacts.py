@@ -194,16 +194,18 @@ class Controller(object):
         url = '/artifacts/%s/%s' % (type_name, artifact_id)
         self.http_client.delete(url)
 
-    def upload_blob(self, artifact_id, blob_property, data, type_name=None):
+    def upload_blob(self, artifact_id, blob_property, data, type_name=None,
+                    content_type=None):
         """Upload blob data.
 
         :param artifact_id: ID of the artifact to download a blob
         :param blob_property: blob property name
         """
+        content_type = content_type or 'application/octet-stream'
         type_name = self._check_type_name(type_name)
-        hdrs = {'Content-Type': 'application/octet-stream'}
+        hdrs = {'Content-Type': content_type}
         url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
-        self.http_client.put(url, headers=hdrs, data=data)
+        self.http_client.put(url, headers=hdrs, data=data, stream=True)
 
     def download_blob(self, artifact_id, blob_property, type_name=None,
                       do_checksum=True):

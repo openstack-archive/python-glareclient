@@ -26,7 +26,7 @@ class FakeAPI(object):
         self.calls = []
 
     def _request(self, method, url, headers=None, data=None,
-                 content_length=None):
+                 content_length=None, **kwargs):
         call = build_call_record(method, sort_url_by_query_keys(url),
                                  headers or {}, data)
         if content_length is not None:
@@ -210,5 +210,4 @@ def build_call_record(method, url, headers, data):
             data = json.loads(data)
         except ValueError:
             return (method, url, headers or {}, data)
-        data = [sorted(d.items()) for d in data]
     return (method, url, headers or {}, data)

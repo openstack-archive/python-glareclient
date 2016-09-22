@@ -135,6 +135,38 @@ class TestUploadBlob(TestBlobs):
         with testtools.ExpectedException(SystemExit):
             self.cmd.take_action(parsed_args)
 
+    def test_upload_with_custom_content_type(self):
+        exp_data = ('template', 'application/x-yaml', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
+
+        mocked_get = {
+            "status": "active",
+            "url": "fake_url",
+            "md5": "35d83e8eedfbdb87ff97d1f2761f8ebf",
+            "sha1": "942854360eeec1335537702399c5aed940401602",
+            "sha256": "d8a7834fc6652f316322d80196f6dcf2"
+                      "94417030e37c15412e4deb7a67a367dd",
+            "external": False,
+            "content_type": "application/x-yaml",
+            "size": 594}
+        self.app.client_manager.artifact.artifacts.get = \
+            lambda id, type_name: {'template': mocked_get}
+
+        arglist = ['tosca_templates',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   '--file', '/path/to/file',
+                   '--content-type', 'application/x-yaml']
+        verify = [('type_name', 'tosca_templates')]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(exp_data, data)
+
     def test_upload_blob_with_blob_prop(self):
         exp_data = ('blob', 'application/octet-stream', False,
                     '35d83e8eedfbdb87ff97d1f2761f8ebf',
