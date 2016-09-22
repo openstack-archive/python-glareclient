@@ -71,14 +71,14 @@ class _BaseHTTPClient(object):
         """Handle the common parameters used to send the request."""
 
         # Default Content-Type is octet-stream
-        content_type = headers.get('Content-Type', 'application/octet-stream')
+        content_type = headers.get('Content-Type', 'application/json')
         data = kwargs.pop("data", None)
         if data is not None and not isinstance(data, six.string_types):
             try:
                 data = json.dumps(data)
-                content_type = content_type or 'application/json'
             except TypeError:
                 data = self._chunk_body(data)
+                content_type = 'application/octet-stream'
 
         headers['Content-Type'] = content_type
         kwargs['stream'] = content_type == 'application/octet-stream'

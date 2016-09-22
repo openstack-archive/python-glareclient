@@ -272,16 +272,6 @@ class TestClient(testtools.TestCase):
         self.assertIsInstance(self.mock.last_request.body, six.string_types)
         self.assertEqual(data, json.loads(self.mock.last_request.body))
 
-    def test_http_chunked_response(self):
-        data = "TEST"
-        path = '/artifacts'
-        self.mock.get(self.endpoint + path, body=six.StringIO(data),
-                      headers={"Content-Type": "application/octet-stream"})
-
-        resp, body = self.client.get(path)
-        self.assertIsInstance(body, types.GeneratorType)
-        self.assertEqual([data], list(body))
-
     @original_only
     def test_log_http_response_with_non_ascii_char(self):
         try:
