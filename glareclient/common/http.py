@@ -1,4 +1,4 @@
-# Copyright 2012 OpenStack Foundation
+# Copyright 2012 OpenStack Foundation.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,102 +14,79 @@
 #    under the License.
 
 import copy
-import logging
+import hashlib
+import os
 import socket
 
 from keystoneauth1 import adapter
-from keystoneauth1 import exceptions as ksa_exc
-from oslo_utils import importutils
-from oslo_utils import netutils
+from oslo_log import log as logging
+from oslo_serialization import jsonutils
+from oslo_utils import encodeutils
 import requests
 import six
-import warnings
+from six.moves import urllib
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
-from oslo_utils import encodeutils
-
-from glareclient.common import utils
-from glareclient import exc
-
-osprofiler_web = importutils.try_import("osprofiler.web")
+from glareclient._i18n import _
+from glareclient.common import exceptions as exc
 
 LOG = logging.getLogger(__name__)
 USER_AGENT = 'python-glareclient'
 CHUNKSIZE = 1024 * 64  # 64kB
 
 
-def encode_headers(headers):
-    """Encodes headers.
+def get_system_ca_file():
+    """Return path to system default CA file."""
+    # Standard CA file locations for Debian/Ubuntu, RedHat/Fedora,
+    # Suse, FreeBSD/OpenBSD, MacOSX, and the bundled ca
+    ca_path = ['/etc/ssl/certs/ca-certificates.crt',
+               '/etc/pki/tls/certs/ca-bundle.crt',
+               '/etc/ssl/ca-bundle.pem',
+               '/etc/ssl/cert.pem',
+               '/System/Library/OpenSSL/certs/cacert.pem',
+               requests.certs.where()]
+    for ca in ca_path:
+        LOG.debug("Looking for ca file %s", ca)
+        if os.path.exists(ca):
+            LOG.debug("Using ca file %s", ca)
+            return ca
+    LOG.warning("System ca file could not be found.")
 
-    Note: This should be used right before
-    sending anything out.
 
-    :param headers: Headers to encode
-    :returns: Dictionary with encoded headers'
-              names and values
-    """
-    return dict((encodeutils.safe_encode(h), encodeutils.safe_encode(v))
-                for h, v in six.iteritems(headers) if v is not None)
+def _chunk_body(body):
+    chunk = body
+    while chunk:
+        chunk = body.read(CHUNKSIZE)
+        if not chunk:
+            break
+        yield chunk
 
 
-class _BaseHTTPClient(object):
+def _set_request_params(kwargs_params):
+    data = kwargs_params.pop('data', None)
+    params = copy.deepcopy(kwargs_params)
+    headers = params.get('headers', {})
+    content_type = headers.get('Content-Type', 'application/json')
 
-    @staticmethod
-    def _chunk_body(body):
-        chunk = body
-        while chunk:
-            chunk = body.read(CHUNKSIZE)
-            if not chunk:
-                break
-            yield chunk
+    if data is not None and not isinstance(data, six.string_types):
+        if content_type.startswith('application/json'):
+            data = jsonutils.dumps(data)
+        if content_type == 'application/octet-stream':
+            data = _chunk_body(data)
 
-    def _set_common_request_kwargs(self, headers, kwargs):
-        """Handle the common parameters used to send the request."""
+    params['data'] = data
+    headers.update({'Content-Type': content_type})
+    params['headers'] = headers
+    params['stream'] = content_type == 'application/octet-stream'
 
-        # Default Content-Type is octet-stream
-        content_type = headers.get('Content-Type', 'application/json')
-        data = kwargs.pop("data", None)
-        if data is not None and not isinstance(data, six.string_types):
-            try:
-                data = json.dumps(data)
-            except TypeError:
-                data = self._chunk_body(data)
-                content_type = 'application/octet-stream'
+    return params
 
-        headers['Content-Type'] = content_type
-        kwargs['stream'] = content_type == 'application/octet-stream'
-        return data
 
-    def _handle_response(self, resp):
-        # log request-id for each api cal
-        request_id = resp.headers.get('x-openstack-request-id')
-        if request_id:
-            LOG.debug('%(method)s call to glare-api for '
-                      '%(url)s used request id '
-                      '%(response_request_id)s',
-                      {'method': resp.request.method,
-                       'url': resp.url,
-                       'response_request_id': request_id})
-
-        if not resp.ok:
-            LOG.debug("Request returned failure status %s.", resp.status_code)
-            raise exc.from_response(resp, resp.content)
-        elif (resp.status_code == requests.codes.MULTIPLE_CHOICES and
-              resp.request.path_url != '/versions'):
-            # NOTE(flaper87): Eventually, we'll remove the check on `versions`
-            # which is a bug (1491350) on the server.
-            raise exc.from_response(resp)
-
+def _handle_response(resp):
         content_type = resp.headers.get('Content-Type')
-
         if not content_type:
             body_iter = six.StringIO(resp.text)
             try:
-                body_iter = json.loads(''.join([c for c in body_iter]))
+                body_iter = jsonutils.loads(''.join([c for c in body_iter]))
             except ValueError:
                 body_iter = None
         elif content_type.startswith('application/json'):
@@ -120,172 +97,6 @@ class _BaseHTTPClient(object):
             # Do not read all response in memory when downloading a blob.
             body_iter = _close_after_stream(resp, CHUNKSIZE)
         return resp, body_iter
-
-
-class HTTPClient(_BaseHTTPClient):
-
-    def __init__(self, endpoint, **kwargs):
-        self.endpoint = endpoint
-        self.identity_headers = kwargs.get('identity_headers')
-        self.auth_token = kwargs.get('token')
-        self.language_header = kwargs.get('language_header')
-        self.last_request_id = None
-        if self.identity_headers:
-            if self.identity_headers.get('X-Auth-Token'):
-                self.auth_token = self.identity_headers.get('X-Auth-Token')
-                del self.identity_headers['X-Auth-Token']
-
-        self.session = requests.Session()
-        self.session.headers["User-Agent"] = USER_AGENT
-
-        if self.language_header:
-            self.session.headers["Accept-Language"] = self.language_header
-
-        self.timeout = float(kwargs.get('timeout', 600))
-
-        if self.endpoint.startswith("https"):
-            compression = kwargs.get('ssl_compression', True)
-
-            if compression is False:
-                # Note: This is not seen by default. (python must be
-                # run with -Wd)
-                warnings.warn('The "ssl_compression" argument has been '
-                              'deprecated.', DeprecationWarning)
-
-            if kwargs.get('insecure', False) is True:
-                self.session.verify = False
-            else:
-                if kwargs.get('cacert', None) is not '':
-                    self.session.verify = kwargs.get('cacert', True)
-
-            self.session.cert = (kwargs.get('cert_file'),
-                                 kwargs.get('key_file'))
-
-    @staticmethod
-    def parse_endpoint(endpoint):
-        return netutils.urlsplit(endpoint)
-
-    def log_curl_request(self, method, url, headers, data, kwargs):
-        curl = ['curl -g -i -X %s' % method]
-
-        headers = copy.deepcopy(headers)
-        headers.update(self.session.headers)
-
-        for (key, value) in six.iteritems(headers):
-            header = '-H \'%s: %s\'' % utils.safe_header(key, value)
-            curl.append(header)
-
-        if not self.session.verify:
-            curl.append('-k')
-        else:
-            if isinstance(self.session.verify, six.string_types):
-                curl.append(' --cacert %s' % self.session.verify)
-
-        if self.session.cert:
-            curl.append(' --cert %s --key %s' % self.session.cert)
-
-        if data and isinstance(data, six.string_types):
-            curl.append('-d \'%s\'' % data)
-
-        curl.append(url)
-
-        msg = ' '.join([encodeutils.safe_decode(item, errors='ignore')
-                        for item in curl])
-        LOG.debug(msg)
-
-    @staticmethod
-    def log_http_response(resp):
-        status = (resp.raw.version / 10.0, resp.status_code, resp.reason)
-        dump = ['\nHTTP/%.1f %s %s' % status]
-        headers = resp.headers.items()
-        dump.extend(['%s: %s' % utils.safe_header(k, v) for k, v in headers])
-        dump.append('')
-        content_type = resp.headers.get('Content-Type')
-
-        if content_type != 'application/octet-stream':
-            dump.extend([resp.text, ''])
-        LOG.debug('\n'.join([encodeutils.safe_decode(x, errors='ignore')
-                             for x in dump]))
-
-    def _request(self, method, url, **kwargs):
-        """Send an http request with the specified characteristics.
-
-        Wrapper around httplib.HTTP(S)Connection.request to handle tasks such
-        as setting headers and error handling.
-        """
-        # Copy the kwargs so we can reuse the original in case of redirects
-        headers = copy.deepcopy(kwargs.pop('headers', {}))
-
-        if self.identity_headers:
-            for k, v in six.iteritems(self.identity_headers):
-                headers.setdefault(k, v)
-
-        data = self._set_common_request_kwargs(headers, kwargs)
-
-        # add identity header to the request
-        if not headers.get('X-Auth-Token'):
-            headers['X-Auth-Token'] = self.auth_token
-
-        if osprofiler_web:
-            headers.update(osprofiler_web.get_trace_id_headers())
-
-        # Note(flaper87): Before letting headers / url fly,
-        # they should be encoded otherwise httplib will
-        # complain.
-        headers = encode_headers(headers)
-
-        if self.endpoint.endswith("/") or url.startswith("/"):
-            conn_url = "%s%s" % (self.endpoint, url)
-        else:
-            conn_url = "%s/%s" % (self.endpoint, url)
-        self.log_curl_request(method, conn_url, headers, data, kwargs)
-
-        try:
-            resp = self.session.request(method,
-                                        conn_url,
-                                        data=data,
-                                        headers=headers,
-                                        **kwargs)
-        except requests.exceptions.Timeout as e:
-            message = ("Error communicating with %(url)s: %(e)s" %
-                       dict(url=conn_url, e=e))
-            raise exc.InvalidEndpoint(message=message)
-        except requests.exceptions.ConnectionError as e:
-            message = ("Error finding address for %(url)s: %(e)s" %
-                       dict(url=conn_url, e=e))
-            raise exc.CommunicationError(message=message)
-        except socket.gaierror as e:
-            message = "Error finding address for %s: %s" % (
-                self.endpoint_hostname, e)
-            raise exc.InvalidEndpoint(message=message)
-        except (socket.error, socket.timeout) as e:
-            endpoint = self.endpoint
-            message = ("Error communicating with %(endpoint)s %(e)s" %
-                       {'endpoint': endpoint, 'e': e})
-            raise exc.CommunicationError(message=message)
-
-        self.last_request_id = resp.headers.get('x-openstack-request-id')
-        resp, body_iter = self._handle_response(resp)
-        self.log_http_response(resp)
-        return resp, body_iter
-
-    def head(self, url, **kwargs):
-        return self._request('HEAD', url, **kwargs)
-
-    def get(self, url, **kwargs):
-        return self._request('GET', url, **kwargs)
-
-    def post(self, url, **kwargs):
-        return self._request('POST', url, **kwargs)
-
-    def put(self, url, **kwargs):
-        return self._request('PUT', url, **kwargs)
-
-    def patch(self, url, **kwargs):
-        return self._request('PATCH', url, **kwargs)
-
-    def delete(self, url, **kwargs):
-        return self._request('DELETE', url, **kwargs)
 
 
 def _close_after_stream(response, chunk_size):
@@ -299,45 +110,278 @@ def _close_after_stream(response, chunk_size):
     response.close()
 
 
-class SessionClient(adapter.Adapter, _BaseHTTPClient):
+class HTTPClient(object):
 
-    def __init__(self, session, **kwargs):
-        kwargs.setdefault('user_agent', USER_AGENT)
-        kwargs.setdefault('service_type', 'artifact')
-        self.last_request_id = None
-        super(SessionClient, self).__init__(session, **kwargs)
+    def __init__(self, endpoint, **kwargs):
+        self.endpoint = endpoint
+        self.auth_url = kwargs.get('auth_url')
+        self.auth_token = kwargs.get('token')
+        self.username = kwargs.get('username')
+        self.password = kwargs.get('password')
+        self.region_name = kwargs.get('region_name')
+        self.include_pass = kwargs.get('include_pass')
+        self.endpoint_url = endpoint
 
-    def request(self, url, method, **kwargs):
-        headers = encode_headers(kwargs.pop('headers', {}))
-        kwargs['raise_exc'] = False
-        data = self._set_common_request_kwargs(headers, kwargs)
+        self.cert_file = kwargs.get('cert_file')
+        self.key_file = kwargs.get('key_file')
+        self.timeout = kwargs.get('timeout')
+
+        self.ssl_connection_params = {
+            'cacert': kwargs.get('cacert'),
+            'cert_file': kwargs.get('cert_file'),
+            'key_file': kwargs.get('key_file'),
+            'insecure': kwargs.get('insecure'),
+        }
+
+        self.verify_cert = None
+        if urllib.parse.urlparse(endpoint).scheme == "https":
+            if kwargs.get('insecure'):
+                self.verify_cert = False
+            else:
+                self.verify_cert = kwargs.get('cacert', get_system_ca_file())
+
+    def _safe_header(self, name, value):
+        if name in ['X-Auth-Token', 'X-Subject-Token']:
+            # because in python3 byte string handling is ... ug
+            v = value.encode('utf-8')
+            h = hashlib.sha1(v)
+            d = h.hexdigest()
+            return encodeutils.safe_decode(name), "{SHA1}%s" % d
+        else:
+            return (encodeutils.safe_decode(name),
+                    encodeutils.safe_decode(value))
+
+    def log_curl_request(self, url, method, kwargs):
+        curl = ['curl -i -X %s' % method]
+
+        for (key, value) in kwargs['headers'].items():
+            header = '-H \'%s: %s\'' % self._safe_header(key, value)
+            curl.append(header)
+
+        conn_params_fmt = [
+            ('key_file', '--key %s'),
+            ('cert_file', '--cert %s'),
+            ('cacert', '--cacert %s'),
+        ]
+        for (key, fmt) in conn_params_fmt:
+            value = self.ssl_connection_params.get(key)
+            if value:
+                curl.append(fmt % value)
+
+        if self.ssl_connection_params.get('insecure'):
+            curl.append('-k')
+
+        if 'data' in kwargs:
+            curl.append('-d \'%s\'' % kwargs['data'])
+
+        curl.append('%s%s' % (self.endpoint, url))
+        LOG.debug(' '.join(curl))
+
+    @staticmethod
+    def log_http_response(resp):
+        status = (resp.raw.version / 10.0, resp.status_code, resp.reason)
+        dump = ['\nHTTP/%.1f %s %s' % status]
+        dump.extend(['%s: %s' % (k, v) for k, v in resp.headers.items()])
+        dump.append('')
+        if resp.content:
+            content = resp.content
+            if isinstance(content, six.binary_type):
+                try:
+                    content = encodeutils.safe_decode(resp.content)
+                except UnicodeDecodeError:
+                    pass
+                else:
+                    dump.extend([content, ''])
+        LOG.debug('\n'.join(dump))
+
+    def request(self, url, method, log=True, **kwargs):
+        """Send an http request with the specified characteristics.
+
+        Wrapper around requests.request to handle tasks such
+        as setting headers and error handling.
+        """
+        # Copy the kwargs so we can reuse the original in case of redirects
+        kwargs['headers'] = copy.deepcopy(kwargs.get('headers', {}))
+        kwargs['headers'].setdefault('User-Agent', USER_AGENT)
+        if self.auth_token:
+            kwargs['headers'].setdefault('X-Auth-Token', self.auth_token)
+        else:
+            kwargs['headers'].update(self.credentials_headers())
+        if self.auth_url:
+            kwargs['headers'].setdefault('X-Auth-Url', self.auth_url)
+        if self.region_name:
+            kwargs['headers'].setdefault('X-Region-Name', self.region_name)
+
+        self.log_curl_request(url, method, kwargs)
+
+        if self.cert_file and self.key_file:
+            kwargs['cert'] = (self.cert_file, self.key_file)
+
+        if self.verify_cert is not None:
+            kwargs['verify'] = self.verify_cert
+
+        if self.timeout is not None:
+            kwargs['timeout'] = float(self.timeout)
+
+        # Allow the option not to follow redirects
+        follow_redirects = kwargs.pop('follow_redirects', True)
+
+        # Since requests does not follow the RFC when doing redirection to sent
+        # back the same method on a redirect we are simply bypassing it.  For
+        # example if we do a DELETE/POST/PUT on a URL and we get a 302 RFC says
+        # that we should follow that URL with the same method as before,
+        # requests doesn't follow that and send a GET instead for the method.
+        # Hopefully this could be fixed as they say in a comment in a future
+        # point version i.e.: 3.x
+        # See issue: https://github.com/kennethreitz/requests/issues/1704
+        allow_redirects = False
 
         try:
-            resp = super(SessionClient, self).request(url,
-                                                      method,
-                                                      headers=headers,
-                                                      data=data,
-                                                      **kwargs)
-        except ksa_exc.ConnectTimeout as e:
-            conn_url = self.get_endpoint(auth=kwargs.get('auth'))
-            conn_url = "%s/%s" % (conn_url.rstrip('/'), url.lstrip('/'))
-            message = ("Error communicating with %(url)s %(e)s" %
-                       dict(url=conn_url, e=e))
-            raise exc.InvalidEndpoint(message=message)
-        except ksa_exc.ConnectFailure as e:
-            conn_url = self.get_endpoint(auth=kwargs.get('auth'))
-            conn_url = "%s/%s" % (conn_url.rstrip('/'), url.lstrip('/'))
+            resp = requests.request(
+                method,
+                self.endpoint_url + url,
+                allow_redirects=allow_redirects,
+                **kwargs)
+        except socket.gaierror as e:
             message = ("Error finding address for %(url)s: %(e)s" %
-                       dict(url=conn_url, e=e))
+                       {'url': self.endpoint_url + url, 'e': e})
+            raise exc.InvalidEndpoint(message=message)
+        except (socket.error,
+                socket.timeout,
+                requests.exceptions.ConnectionError) as e:
+            endpoint = self.endpoint
+            message = ("Error communicating with %(endpoint)s %(e)s" %
+                       {'endpoint': endpoint, 'e': e})
             raise exc.CommunicationError(message=message)
 
-        self.last_request_id = resp.headers.get('x-openstack-request-id')
-        return self._handle_response(resp)
+        if log:
+            self.log_http_response(resp)
+
+        if 'X-Auth-Key' not in kwargs['headers'] and \
+                (resp.status_code == 401 or
+                 (resp.status_code == 500 and
+                  "(HTTP 401)" in resp.content)):
+            raise exc.HTTPUnauthorized("Authentication failed. Please try"
+                                       " again.\n%s"
+                                       % resp.content)
+        elif 400 <= resp.status_code < 600:
+            raise exc.from_response(resp)
+        elif resp.status_code in (301, 302, 305):
+            # Redirected. Reissue the request to the new location,
+            # unless caller specified follow_redirects=False
+            if follow_redirects:
+                location = resp.headers.get('location')
+                path = self.strip_endpoint(location)
+                resp = self.request(path, method, **kwargs)
+        elif resp.status_code == 300:
+            raise exc.from_response(resp)
+
+        return resp
+
+    def strip_endpoint(self, location):
+        if location is None:
+            message = "Location not returned with 302"
+            raise exc.InvalidEndpoint(message=message)
+        elif location.startswith(self.endpoint):
+            return location[len(self.endpoint):]
+        else:
+            message = "Prohibited endpoint redirect %s" % location
+            raise exc.InvalidEndpoint(message=message)
+
+    def credentials_headers(self):
+        creds = {}
+        if self.username:
+            creds['X-Auth-User'] = self.username
+        if self.password:
+            creds['X-Auth-Key'] = self.password
+        return creds
+
+    def json_request(self, url, method, **kwargs):
+        params = _set_request_params(kwargs)
+        resp = self.request(url, method, **params)
+        return _handle_response(resp)
+
+    def json_patch_request(self, url, method='PATCH', **kwargs):
+        return self.json_request(
+            url, method, **kwargs)
+
+    def head(self, url, **kwargs):
+        return self.json_request(url, "HEAD", **kwargs)
+
+    def get(self, url, **kwargs):
+        return self.json_request(url, "GET", **kwargs)
+
+    def post(self, url, **kwargs):
+        return self.json_request(url, "POST", **kwargs)
+
+    def put(self, url, **kwargs):
+        return self.json_request(url, "PUT", **kwargs)
+
+    def delete(self, url, **kwargs):
+        return self.request(url, "DELETE", **kwargs)
+
+    def patch(self, url, **kwargs):
+        return self.json_request(url, "PATCH", **kwargs)
 
 
-def get_http_client(endpoint=None, session=None, **kwargs):
+class SessionClient(adapter.LegacyJsonAdapter):
+    """HTTP client based on Keystone client session."""
+
+    def request(self, url, method, **kwargs):
+        params = _set_request_params(kwargs)
+        redirect = kwargs.get('redirect')
+
+        resp, body = super(SessionClient, self).request(
+            url, method,
+            **params)
+
+        if 400 <= resp.status_code < 600:
+            raise exc.from_response(resp)
+        elif resp.status_code in (301, 302, 305):
+            if redirect:
+                location = resp.headers.get('location')
+                path = self.strip_endpoint(location)
+                resp = self.request(path, method, **kwargs)
+        elif resp.status_code == 300:
+            raise exc.from_response(resp)
+
+        if resp.headers.get('Content-Type') == 'application/octet-stream':
+            body = _close_after_stream(resp, CHUNKSIZE)
+        return resp, body
+
+    def strip_endpoint(self, location):
+        if location is None:
+            message = _("Location not returned with 302")
+            raise exc.InvalidEndpoint(message=message)
+        if (self.endpoint_override is not None and
+                location.lower().startswith(self.endpoint_override.lower())):
+                return location[len(self.endpoint_override):]
+        else:
+            return location
+
+
+def construct_http_client(*args, **kwargs):
+    session = kwargs.pop('session', None)
+    auth = kwargs.pop('auth', None)
+    endpoint = next(iter(args), None)
+
     if session:
-        return SessionClient(session, **kwargs)
+        service_type = kwargs.pop('service_type', None)
+        endpoint_type = kwargs.pop('endpoint_type', None)
+        region_name = kwargs.pop('region_name', None)
+        service_name = kwargs.pop('service_name', None)
+        parameters = {
+            'endpoint_override': endpoint,
+            'session': session,
+            'auth': auth,
+            'interface': endpoint_type,
+            'service_type': service_type,
+            'region_name': region_name,
+            'service_name': service_name,
+            'user_agent': 'python-glareclient',
+        }
+        parameters.update(kwargs)
+        return SessionClient(**parameters)
     elif endpoint:
         return HTTPClient(endpoint, **kwargs)
     else:
