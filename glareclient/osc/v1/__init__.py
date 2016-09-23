@@ -34,5 +34,5 @@ class TypeMapperAction(argparse.Action):
             return 'tosca_templates'
         elif type_name in ['murano-packages', 'murano-package',
                            'murano_packages', 'murano_package']:
-            return 'tosca_templates'
+            return 'murano_packages'
         return type_name

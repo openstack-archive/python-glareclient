@@ -150,7 +150,6 @@ class DownloadBlob(command.Command):
             data = progressbar.VerboseIteratorWrapper(data, len(data))
         if not (sys.stdout.isatty() and parsed_args.file is None):
             utils.save_blob(data, parsed_args.file)
-            return self.dict2columns(())
         else:
             msg = ('No redirection or local file specified for downloaded '
                    'blob. Please specify a local file with --file to save '
