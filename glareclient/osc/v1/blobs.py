@@ -90,13 +90,7 @@ class UploadBlob(command.ShowOne):
         data = client.artifacts.get(parsed_args.id,
                                     type_name=parsed_args.type_name)
 
-        size = data[parsed_args.blob_property].pop('size', None)
-        data_to_display = {'blob_property': parsed_args.blob_property,
-                           'id': parsed_args.id,
-                           'name': data['name'],
-                           'version': data['version'],
-                           'status': data['status'],
-                           'size': utils.make_size_human_readable(size)}
+        data_to_display = {'blob_property': parsed_args.blob_property}
         data_to_display.update(data[parsed_args.blob_property])
         return self.dict2columns(data_to_display)
 

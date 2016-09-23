@@ -37,12 +37,16 @@ class TestUploadBlob(TestBlobs):
         # Command to test
         self.cmd = osc_blob.UploadBlob(self.app, None)
 
-        self.COLUMNS = ('blob_property', 'id', 'name',
-                        'size', 'status', 'version')
+        self.COLUMNS = ('blob_property', 'content_type', 'external',
+                        'md5', 'sha1', 'sha256', 'size', 'status', 'url')
 
     def test_upload_images(self):
-        exp_data = ('image', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('image', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['images',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file']
@@ -54,8 +58,12 @@ class TestUploadBlob(TestBlobs):
         self.assertEqual(exp_data, data)
 
     def test_upload_tosca_template(self):
-        exp_data = ('template', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('template', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['tosca_templates',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file']
@@ -67,8 +75,12 @@ class TestUploadBlob(TestBlobs):
         self.assertEqual(exp_data, data)
 
     def test_upload_heat_template(self):
-        exp_data = ('template', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('template', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['heat_templates',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file']
@@ -80,8 +92,12 @@ class TestUploadBlob(TestBlobs):
         self.assertEqual(exp_data, data)
 
     def test_upload_environment(self):
-        exp_data = ('environment', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('environment', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['heat_environments',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file']
@@ -93,8 +109,12 @@ class TestUploadBlob(TestBlobs):
         self.assertEqual(exp_data, data)
 
     def test_upload_package(self):
-        exp_data = ('package', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('package', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['murano_packages',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file']
@@ -116,8 +136,12 @@ class TestUploadBlob(TestBlobs):
             self.cmd.take_action(parsed_args)
 
     def test_upload_blob_with_blob_prop(self):
-        exp_data = ('blob', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                    'art1', '1B', 'active', '0.0.0')
+        exp_data = ('blob', 'application/octet-stream', False,
+                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
+                    '942854360eeec1335537702399c5aed940401602',
+                    'd8a7834fc6652f316322d80196f6dcf2'
+                    '94417030e37c15412e4deb7a67a367dd',
+                    594, 'active', 'fake_url')
         arglist = ['sample_artifact',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--blob', '/path/to/file',

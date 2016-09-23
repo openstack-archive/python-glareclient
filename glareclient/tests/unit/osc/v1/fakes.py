@@ -20,6 +20,17 @@ from glareclient.common import utils as g_utils
 import mock
 from osc_lib.tests import utils
 
+blob_fixture = {
+    "status": "active",
+    "url": "fake_url",
+    "md5": "35d83e8eedfbdb87ff97d1f2761f8ebf",
+    "sha1": "942854360eeec1335537702399c5aed940401602",
+    "sha256": "d8a7834fc6652f316322d80196f6dcf2"
+              "94417030e37c15412e4deb7a67a367dd",
+    "external": False,
+    "content_type": "application/octet-stream",
+    "size": 594}
+
 
 def mock_list(*args, **kwargs):
     return [{'id': 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
@@ -43,11 +54,11 @@ def mock_get(*args, **kwargs):
             'owner': 'f649c77999e449e89627024f71b76603',
             'visibility': 'private',
             'status': 'active',
-            'blob': {'size': 1},
-            'image': {'size': 1},
-            'package': {'size': 1},
-            'template': {'size': 1},
-            'environment': {'size': 1}}
+            'blob': blob_fixture,
+            'image': blob_fixture,
+            'package': blob_fixture,
+            'template': blob_fixture,
+            'environment': blob_fixture}
 
 
 def mock_g_servs(*args, **kwargs):
