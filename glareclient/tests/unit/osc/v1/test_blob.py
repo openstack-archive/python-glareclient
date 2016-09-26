@@ -45,7 +45,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['images',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'images')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -58,7 +58,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['tosca_templates',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'tosca_templates')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -71,7 +71,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['heat_templates',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'heat_templates')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -84,7 +84,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['heat_environments',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'heat_environments')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -97,7 +97,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['murano_packages',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'murano_packages')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -108,7 +108,7 @@ class TestUploadBlob(TestBlobs):
     def test_upload_bad(self):
         arglist = ['sample_artifact',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file']
+                   '--file', '/path/to/file']
         verify = [('type_name', 'sample_artifact')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
@@ -120,7 +120,7 @@ class TestUploadBlob(TestBlobs):
                     'art1', '1B', 'active', '0.0.0')
         arglist = ['sample_artifact',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--blob', '/path/to/file',
+                   '--file', '/path/to/file',
                    '--blob-property', 'blob']
         verify = [('type_name', 'sample_artifact')]
 

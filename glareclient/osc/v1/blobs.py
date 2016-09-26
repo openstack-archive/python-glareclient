@@ -53,9 +53,9 @@ class UploadBlob(command.ShowOne):
             help='ID of the artifact to update',
         )
         parser.add_argument(
-            '--blob',
+            '--file',
             metavar='<TYPE_NAME>',
-            help='Local file that contains blob to be uploaded.',
+            help='Local file that contains data to be uploaded.',
         )
         parser.add_argument(
             '--blob-property',
@@ -76,7 +76,7 @@ class UploadBlob(command.ShowOne):
             parsed_args.blob_property = _default_blob_property(
                 parsed_args.type_name)
 
-        blob = utils.get_data_file(parsed_args.blob)
+        blob = utils.get_data_file(parsed_args.file)
         if parsed_args.progress:
             file_size = utils.get_file_size(blob)
             if file_size is not None:
