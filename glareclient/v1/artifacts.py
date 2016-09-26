@@ -153,7 +153,7 @@ class Controller(object):
         for artifact in paginate(url, page_size, limit):
             yield artifact
 
-    def active(self, artifact_id, type_name=None):
+    def activate(self, artifact_id, type_name=None):
         """Set artifact status to 'active'.
 
         :param artifact_id: ID of the artifact to get.

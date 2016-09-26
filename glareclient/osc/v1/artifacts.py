@@ -261,8 +261,8 @@ class ActivateArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.active(parsed_args.id,
-                                       type_name=parsed_args.type_name)
+        data = client.artifacts.activate(
+            parsed_args.id, type_name=parsed_args.type_name)
         return self.dict2columns(data)
 
 

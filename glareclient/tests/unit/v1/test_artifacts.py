@@ -192,8 +192,8 @@ class TestController(testtools.TestCase):
 
     def test_active_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.active(artifact_id=art_id,
-                               type_name='sample_artifact')
+        self.controller.activate(artifact_id=art_id,
+                                 type_name='sample_artifact')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
