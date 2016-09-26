@@ -73,7 +73,7 @@ class TestArtifacts(utils.TestCommand):
         self.app.client_manager.artifact.artifacts.create = mock_g_servs
         self.app.client_manager.artifact.artifacts.update = mock_g_servs
         self.app.client_manager.artifact.artifacts.delete = mock_g_servs
-        self.app.client_manager.artifact.artifacts.active = mock_g_servs
+        self.app.client_manager.artifact.artifacts.activate = mock_g_servs
         self.app.client_manager.artifact.artifacts.deactivate = mock_g_servs
         self.app.client_manager.artifact.artifacts.reactivate = mock_g_servs
         self.app.client_manager.artifact.artifacts.publish = mock_g_servs
