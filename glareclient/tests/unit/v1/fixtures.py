@@ -15,12 +15,12 @@
 
 
 data_fixtures = {
-    '/artifacts/sample_artifact?limit=20': {
+    '/artifacts/images?limit=20': {
         'GET': (
             # headers
             {},
             # response
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
@@ -39,10 +39,10 @@ data_fixtures = {
             ]},
         ),
     },
-    '/artifacts/sample_artifact?page_size=2': {
+    '/artifacts/images?page_size=2': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
@@ -56,10 +56,10 @@ data_fixtures = {
             ]},
         ),
     },
-    '/artifacts/sample_artifact?limit=2': {
+    '/artifacts/images?limit=2': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
@@ -70,15 +70,15 @@ data_fixtures = {
                     'id': 'db721fb0-5b85-4738-9401-f161d541de5e',
                     'version': '0.0.0'
                 }],
-             'next': '/artifacts/sample_artifact?'
+             'next': '/artifacts/images?'
                      'marker=e1090471-1d12-4935-a8d8-a9351266ece8&limit=2'},
         ),
     },
-    '/artifacts/sample_artifact?'
+    '/artifacts/images?'
     'limit=2&marker=e1090471-1d12-4935-a8d8-a9351266ece8': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art3',
                     'id': 'e1090471-1d12-4935-a8d8-a9351266ece8',
@@ -87,10 +87,10 @@ data_fixtures = {
             ]},
         ),
     },
-    '/artifacts/sample_artifact?limit=20&sort=name%3Adesc': {
+    '/artifacts/images?limit=20&sort=name%3Adesc': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art2',
                     'id': 'e4f027d2-bff3-4084-a2ba-f31cb5e3067f',
@@ -102,14 +102,14 @@ data_fixtures = {
                     'version': '0.0.0'
                 }
             ],
-                'next': '/artifacts/sample_artifact?'
+                'next': '/artifacts/images?'
                 'marker=3a4560a1-e585-443e-9b39-553b46ec92d1&limit=20'},
         ),
     },
-    '/artifacts/sample_artifact?limit=20&sort=name': {
+    '/artifacts/images?limit=20&sort=name': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art2',
                     'id': 'e4f027d2-bff3-4084-a2ba-f31cb5e3067f',
@@ -121,15 +121,15 @@ data_fixtures = {
                     'version': '0.0.0'
                 }
             ],
-                'next': '/artifacts/sample_artifact?'
+                'next': '/artifacts/images?'
                 'marker=3a4560a1-e585-443e-9b39-553b46ec92d1&limit=20'},
         ),
     },
-    '/artifacts/sample_artifact?'
+    '/artifacts/images?'
     'limit=20&marker=3a4560a1-e585-443e-9b39-553b46ec92d1': {
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
@@ -138,10 +138,10 @@ data_fixtures = {
             ]}
         ),
     },
-    '/artifacts/sample_artifact': {
+    '/artifacts/images': {
         'POST': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art_1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92a3',
@@ -150,7 +150,7 @@ data_fixtures = {
             ]}
         ),
     },
-    '/artifacts/sample_artifact/3a4560a1-e585-443e-9b39-553b46ec92a3': {
+    '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a3': {
         'DELETE': (
             {},
             {}
@@ -161,7 +161,7 @@ data_fixtures = {
         ),
         'GET': (
             {},
-            {'sample_artifact': [
+            {'images': [
                 {
                     'name': 'art_1',
                     'id': '3a4560a1-e585-443e-9b39-553b46ec92a3',
@@ -170,7 +170,7 @@ data_fixtures = {
             ]}
         )
     },
-    '/artifacts/sample_artifact/3a4560a1-e585-443e-9b39-553b46ec92a3/blob': {
+    '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a3/image': {
         'PUT': (
             {},
             ''
@@ -180,7 +180,7 @@ data_fixtures = {
             {}
         )
     },
-    '/artifacts/sample_artifact/3a4560a1-e585-443e-9b39-553b46ec92a2/blob': {
+    '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a2/image': {
         'PUT': (
             {},
             ''

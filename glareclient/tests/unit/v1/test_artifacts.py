@@ -28,7 +28,7 @@ class TestController(testtools.TestCase):
         self.controller = artifacts.Controller(self.api)
 
     def test_list_artifacts(self):
-        artifacts = list(self.controller.list(type_name='sample_artifact'))
+        artifacts = list(self.controller.list(type_name='images'))
         self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
                          artifacts[0]['id'])
         self.assertEqual('art1', artifacts[0]['name'])
@@ -41,13 +41,13 @@ class TestController(testtools.TestCase):
 
         exp_headers = {}
         expect_body = None
-        expect = [('GET', '/artifacts/sample_artifact?limit=20',
+        expect = [('GET', '/artifacts/images?limit=20',
                    exp_headers,
                    expect_body)]
         self.assertEqual(expect, self.api.calls)
 
     def test_list_with_paginate(self):
-        artifacts = list(self.controller.list(type_name='sample_artifact',
+        artifacts = list(self.controller.list(type_name='images',
                                               page_size=2))
         self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
                          artifacts[0]['id'])
@@ -57,17 +57,17 @@ class TestController(testtools.TestCase):
                          artifacts[1]['id'])
         exp_headers = {}
         expect_body = None
-        expect = [('GET', '/artifacts/sample_artifact?limit=2',
+        expect = [('GET', '/artifacts/images?limit=2',
                    exp_headers,
                    expect_body),
-                  ('GET', '/artifacts/sample_artifact?limit=2'
+                  ('GET', '/artifacts/images?limit=2'
                           '&marker=e1090471-1d12-4935-a8d8-a9351266ece8',
                    exp_headers,
                    expect_body)]
         self.assertEqual(expect, self.api.calls)
 
     def test_list_artifacts_limit(self):
-        artifacts = list(self.controller.list(type_name='sample_artifact',
+        artifacts = list(self.controller.list(type_name='images',
                                               limit=2))
         self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
                          artifacts[0]['id'])
@@ -77,14 +77,14 @@ class TestController(testtools.TestCase):
                          artifacts[1]['id'])
         exp_headers = {}
         expect_body = None
-        expect = [('GET', '/artifacts/sample_artifact?limit=2',
+        expect = [('GET', '/artifacts/images?limit=2',
                    exp_headers,
                    expect_body)]
         self.assertEqual(expect, self.api.calls)
 
     def test_list_artifact_sort_name(self):
 
-        artifacts = list(self.controller.list(type_name='sample_artifact',
+        artifacts = list(self.controller.list(type_name='images',
                                               sort='name:desc'))
         self.assertEqual('e4f027d2-bff3-4084-a2ba-f31cb5e3067f',
                          artifacts[0]['id'])
@@ -94,11 +94,11 @@ class TestController(testtools.TestCase):
                          artifacts[1]['id'])
         exp_headers = {}
         expect_body = None
-        expect = [('GET', '/artifacts/sample_artifact?limit=20'
+        expect = [('GET', '/artifacts/images?limit=20'
                           '&sort=name%3Adesc',
                    exp_headers,
                    expect_body),
-                  ('GET', '/artifacts/sample_artifact?limit=20'
+                  ('GET', '/artifacts/images?limit=20'
                           '&marker=3a4560a1-e585-443e-9b39-553b46ec92d1',
                    exp_headers,
                    expect_body)]
@@ -106,22 +106,22 @@ class TestController(testtools.TestCase):
 
     def test_list_artifact_sort_badrequest(self):
         with testtools.ExpectedException(HTTPBadRequest):
-            list(self.controller.list(type_name='sample_artifact',
+            list(self.controller.list(type_name='images',
                                       sort='name:KAK'))
 
     def test_create_artifact(self):
         properties = {
             'name': 'art_1',
-            'type_name': 'sample_artifact'
+            'type_name': 'images'
         }
 
         art = self.controller.create(**properties)
-        self.assertEqual('art_1', art['sample_artifact'][0]['name'])
-        self.assertEqual('0.0.0', art['sample_artifact'][0]['version'])
-        self.assertIsNotNone(art['sample_artifact'][0]['id'])
+        self.assertEqual('art_1', art['images'][0]['name'])
+        self.assertEqual('0.0.0', art['images'][0]['version'])
+        self.assertIsNotNone(art['images'][0]['id'])
         exp_headers = {}
         expect_body = [('name', 'art_1'), ('version', '0.0.0')]
-        expect = [('POST', '/artifacts/sample_artifact',
+        expect = [('POST', '/artifacts/images',
                    exp_headers,
                    expect_body)]
         self.assertEqual(expect, self.api.calls)
@@ -137,9 +137,9 @@ class TestController(testtools.TestCase):
     def test_delete_artifact(self):
         self.controller.delete(
             artifact_id='3a4560a1-e585-443e-9b39-553b46ec92a3',
-            type_name='sample_artifact')
+            type_name='images')
 
-        expect = [('DELETE', '/artifacts/sample_artifact/'
+        expect = [('DELETE', '/artifacts/images/'
                              '3a4560a1-e585-443e-9b39-553b46ec92a3',
                    {},
                    None)]
@@ -147,7 +147,7 @@ class TestController(testtools.TestCase):
 
     def test_update_prop(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        param = {'type_name': 'sample_artifact',
+        param = {'type_name': 'images',
                  'name': 'new_name'}
 
         self.controller.update(artifact_id=art_id,
@@ -161,7 +161,7 @@ class TestController(testtools.TestCase):
                         'value': 'new_name',
                         'op': 'add'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -172,7 +172,7 @@ class TestController(testtools.TestCase):
 
         self.controller.update(artifact_id=art_id,
                                remove_props=['name'],
-                               type_name='sample_artifact')
+                               type_name='images')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
@@ -181,7 +181,7 @@ class TestController(testtools.TestCase):
                         'op': 'replace',
                         'value': None}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -190,12 +190,12 @@ class TestController(testtools.TestCase):
 
         self.controller.update(artifact_id=art_id,
                                remove_props=['metadata/key1'],
-                               type_name='sample_artifact')
+                               type_name='images')
 
         expect_body = [{'path': '/metadata/key1',
                         'op': 'remove'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -204,12 +204,12 @@ class TestController(testtools.TestCase):
 
         self.controller.update(artifact_id=art_id,
                                remove_props=['releases/1'],
-                               type_name='sample_artifact')
+                               type_name='images')
 
         expect_body = [{'path': '/releases/1',
                         'op': 'remove'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -222,7 +222,7 @@ class TestController(testtools.TestCase):
     def test_active_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.activate(artifact_id=art_id,
-                                 type_name='sample_artifact')
+                                 type_name='images')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
@@ -231,7 +231,7 @@ class TestController(testtools.TestCase):
                         'value': 'active',
                         'op': 'add'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -240,7 +240,7 @@ class TestController(testtools.TestCase):
     def test_deactivate_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.deactivate(artifact_id=art_id,
-                                   type_name='sample_artifact')
+                                   type_name='images')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
@@ -249,7 +249,7 @@ class TestController(testtools.TestCase):
                         'value': 'deactivated',
                         'op': 'add'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -258,7 +258,7 @@ class TestController(testtools.TestCase):
     def test_reactivate_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.reactivate(artifact_id=art_id,
-                                   type_name='sample_artifact')
+                                   type_name='images')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
@@ -267,7 +267,7 @@ class TestController(testtools.TestCase):
                         'value': 'active',
                         'op': 'add'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
 
@@ -276,7 +276,7 @@ class TestController(testtools.TestCase):
     def test_publish_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.publish(artifact_id=art_id,
-                                type_name='sample_artifact')
+                                type_name='images')
         exp_headers = {
             'Content-Type': 'application/json-patch+json'
         }
@@ -285,7 +285,7 @@ class TestController(testtools.TestCase):
                         'value': 'public',
                         'op': 'add'}]
 
-        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+        expect = [('PATCH', '/artifacts/images/%s' % art_id,
                    exp_headers,
                    expect_body)]
         self.assertEqual(expect, self.api.calls)
@@ -293,15 +293,15 @@ class TestController(testtools.TestCase):
     def test_upload_blob(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.upload_blob(artifact_id=art_id,
-                                    type_name='sample_artifact',
-                                    blob_property='blob',
+                                    type_name='images',
+                                    blob_property='image',
                                     data='data')
 
         exp_headers = {
             'Content-Type': 'application/octet-stream'
         }
 
-        expect = [('PUT', '/artifacts/sample_artifact/%s/blob' % art_id,
+        expect = [('PUT', '/artifacts/images/%s/image' % art_id,
                    exp_headers,
                    'data')]
         self.assertEqual(expect, self.api.calls)
@@ -309,8 +309,8 @@ class TestController(testtools.TestCase):
     def test_upload_blob_custom_content_type(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.upload_blob(artifact_id=art_id,
-                                    type_name='sample_artifact',
-                                    blob_property='blob',
+                                    type_name='images',
+                                    blob_property='image',
                                     data='{"a":"b"}',
                                     content_type='application/json',)
 
@@ -318,7 +318,7 @@ class TestController(testtools.TestCase):
             'Content-Type': 'application/json'
         }
 
-        expect = [('PUT', '/artifacts/sample_artifact/%s/blob' % art_id,
+        expect = [('PUT', '/artifacts/images/%s/image' % art_id,
                    exp_headers,
                    {"a": "b"})]
         self.assertEqual(expect, self.api.calls)
@@ -326,12 +326,12 @@ class TestController(testtools.TestCase):
     def test_download_blob(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.download_blob(artifact_id=art_id,
-                                      type_name='sample_artifact',
-                                      blob_property='blob')
+                                      type_name='images',
+                                      blob_property='image')
 
         exp_headers = {}
 
-        expect = [('GET', '/artifacts/sample_artifact/%s/blob' % art_id,
+        expect = [('GET', '/artifacts/images/%s/image' % art_id,
                    exp_headers,
                    None)]
         self.assertEqual(expect, self.api.calls)
@@ -339,11 +339,11 @@ class TestController(testtools.TestCase):
     def test_download_blob_with_checksum(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a2'
         data = self.controller.download_blob(artifact_id=art_id,
-                                             type_name='sample_artifact',
-                                             blob_property='blob')
+                                             type_name='images',
+                                             blob_property='image')
         self.assertIsNotNone(data.iterable)
 
-        expect = [('GET', '/artifacts/sample_artifact/%s/blob' % art_id,
+        expect = [('GET', '/artifacts/images/%s/image' % art_id,
                    {},
                    None)]
         self.assertEqual(expect, self.api.calls)
@@ -351,12 +351,12 @@ class TestController(testtools.TestCase):
     def test_download_blob_without_checksum(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a2'
         data = self.controller.download_blob(artifact_id=art_id,
-                                             type_name='sample_artifact',
-                                             blob_property='blob',
+                                             type_name='images',
+                                             blob_property='image',
                                              do_checksum=False)
         self.assertIsNotNone(data.iterable)
 
-        expect = [('GET', '/artifacts/sample_artifact/%s/blob' % art_id,
+        expect = [('GET', '/artifacts/images/%s/image' % art_id,
                    {},
                    None)]
         self.assertEqual(expect, self.api.calls)
@@ -364,9 +364,9 @@ class TestController(testtools.TestCase):
     def test_get_artifact(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         art = self.controller.get(artifact_id=art_id,
-                                  type_name='sample_artifact')
-        self.assertEqual(art_id, art['sample_artifact'][0]['id'])
-        self.assertEqual('art_1', art['sample_artifact'][0]['name'])
+                                  type_name='images')
+        self.assertEqual(art_id, art['images'][0]['id'])
+        self.assertEqual('art_1', art['images'][0]['name'])
 
     def test_type_list(self):
         data = self.controller.get_type_list()

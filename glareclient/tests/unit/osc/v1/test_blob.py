@@ -32,7 +32,7 @@ class TestUploadBlob(TestBlobs):
     def setUp(self):
         super(TestUploadBlob, self).setUp()
         self.blob_mock.call.return_value = \
-            api_art.Controller(self.http, type_name='sample_artifact')
+            api_art.Controller(self.http, type_name='images')
 
         # Command to test
         self.cmd = osc_blob.UploadBlob(self.app, None)
@@ -126,11 +126,10 @@ class TestUploadBlob(TestBlobs):
         self.assertEqual(exp_data, data)
 
     def test_upload_bad(self):
-        arglist = ['sample_artifact',
+        arglist = ['user_type',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--file', '/path/to/file']
-        verify = [('type_name', 'sample_artifact')]
-
+        verify = [('type_name', 'user_type')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         with testtools.ExpectedException(SystemExit):
             self.cmd.take_action(parsed_args)
@@ -174,11 +173,11 @@ class TestUploadBlob(TestBlobs):
                     'd8a7834fc6652f316322d80196f6dcf2'
                     '94417030e37c15412e4deb7a67a367dd',
                     594, 'active', 'fake_url')
-        arglist = ['sample_artifact',
+        arglist = ['images',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--file', '/path/to/file',
                    '--blob-property', 'blob']
-        verify = [('type_name', 'sample_artifact')]
+        verify = [('type_name', 'images')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
@@ -190,7 +189,7 @@ class TestDownloadBlob(TestBlobs):
     def setUp(self):
         super(TestDownloadBlob, self).setUp()
         self.blob_mock.call.return_value = \
-            api_art.Controller(self.http, type_name='sample_artifact')
+            api_art.Controller(self.http, type_name='images')
 
         # Command to test
         self.cmd = osc_blob.DownloadBlob(self.app, None)
