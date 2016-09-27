@@ -1,3 +1,4 @@
+
 # Copyright 2012 OpenStack Foundation
 # All Rights Reserved.
 #
@@ -13,28 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 from glareclient.common import http
-from glareclient.common import utils
 from glareclient.v1 import artifacts
 from glareclient.v1 import versions
 
 
 class Client(object):
-    """Client for the Glare Artifact Repository v2 API.
+    """Client for the Glare Artifact Repository v1 API.
 
-    :param string endpoint: A user-supplied endpoint URL for the glare
-                            service.
+    :param string endpoint: A user-supplied endpoint URL for the glare service.
     :param string token: Token for authentication.
-    :param integer timeout: Allows customization of the timeout for client
-                            http requests. (optional)
-    :param string language_header: Set Accept-Language header to be sent in
-                                   requests to glare.
     """
 
-    def __init__(self, endpoint=None, **kwargs):
-        endpoint, self.version = utils.endpoint_version_from_url(endpoint, 1.0)
-        self.http_client = http.get_http_client(endpoint=endpoint, **kwargs)
+    def __init__(self, endpoint, **kwargs):
+        """Initialize a new client for the Glare v1 API."""
 
+        self.version = kwargs.get('version')
+        self.http_client = http.construct_http_client(endpoint, **kwargs)
         self.artifacts = artifacts.Controller(self.http_client)
         self.versions = versions.VersionController(self.http_client)
