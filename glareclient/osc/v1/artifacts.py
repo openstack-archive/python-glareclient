@@ -179,7 +179,7 @@ class UpdateArtifact(command.ShowOne):
         ),
         parser.add_argument(
             '--remove-property',
-            metavar='<key=value>',
+            metavar='<key>',
             action='append',
             default=[],
             help='Property that will be removed.'
@@ -196,21 +196,16 @@ class UpdateArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
 
-        remove_props = {}
-        for datum in parsed_args.remove_property:
-            key, value = datum.split('=', 1)
-            remove_props[key] = value
-
         prop = {}
         for datum in parsed_args.property:
             key, value = datum.split('=', 1)
             prop[key] = value
 
         client = self.app.client_manager.artifact
-        data = client.artifacts.update(parsed_args.id,
-                                       type_name=parsed_args.type_name,
-                                       remove_props=remove_props,
-                                       **prop)
+        data = client.artifacts.update(
+            parsed_args.id, type_name=parsed_args.type_name,
+            remove_props=parsed_args.remove_property, **prop)
+
         return self.dict2columns(data)
 
 

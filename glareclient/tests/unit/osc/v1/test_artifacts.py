@@ -220,10 +220,10 @@ class TestUpdateArtifacts(TestArtifacts):
     def test_artifact_update_multiremove_prop(self):
         arglist = ['sample_artifact',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--remove-property', 'prop1=1',
-                   '--remove-property', 'prop2=2']
+                   '--remove-property', 'prop1',
+                   '--remove-property', 'prop2']
         verify = [('type_name', 'sample_artifact'),
-                  ('remove_property', ['prop1=1', 'prop2=2'])]
+                  ('remove_property', ['prop1', 'prop2'])]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
         # Check that columns are correct
