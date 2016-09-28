@@ -50,11 +50,11 @@ class UploadBlob(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         parser.add_argument(
             '--file',
-            metavar='<TYPE_NAME>',
+            metavar='<FILE_PATH>',
             help='Local file that contains data to be uploaded.',
         )
         parser.add_argument(
@@ -109,7 +109,7 @@ class DownloadBlob(command.Command):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         parser.add_argument(
             '--progress',

@@ -27,7 +27,7 @@ class Controller(object):
         self.sort_dir_values = ('asc', 'desc')
 
     def _check_type_name(self, type_name):
-        """Check that type name and type versions were specified"""
+        """Check that type name and type versions were specified."""
         type_name = type_name or self.type_name
         if type_name is None:
             msg = "Type name must be specified"

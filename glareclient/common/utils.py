@@ -18,9 +18,7 @@ from __future__ import print_function
 import errno
 import hashlib
 import os
-import re
 import six
-import six.moves.urllib.parse as urlparse
 import sys
 
 if os.name == 'nt':
@@ -32,16 +30,6 @@ from oslo_utils import encodeutils
 from oslo_utils import importutils
 
 SENSITIVE_HEADERS = ('X-Auth-Token', )
-
-
-# Decorator for cli-args
-def arg(*args, **kwargs):
-    def _decorator(func):
-        # Because of the semantics of decorator composition if we just append
-        # to the options list positional options will appear to be backwards.
-        func.__dict__.setdefault('arguments', []).insert(0, (args, kwargs))
-        return func
-    return _decorator
 
 
 def env(*vars, **kwargs):
@@ -66,34 +54,8 @@ def import_versioned_module(version, submodule=None):
 
 def exit(msg='', exit_code=1):
     if msg:
-        print_err(msg)
+        print(encodeutils.safe_decode(msg), file=sys.stderr)
     sys.exit(exit_code)
-
-
-def print_err(msg):
-    print(encodeutils.safe_decode(msg), file=sys.stderr)
-
-
-def strip_version(endpoint):
-    """Strip version from the last component of endpoint if present."""
-    # NOTE(flaper87): This shouldn't be necessary if
-    # we make endpoint the first argument. However, we
-    # can't do that just yet because we need to keep
-    # backwards compatibility.
-    if not isinstance(endpoint, six.string_types):
-        raise ValueError("Expected endpoint")
-
-    version = None
-    # Get rid of trailing '/' if present
-    endpoint = endpoint.rstrip('/')
-    url_parts = urlparse.urlparse(endpoint)
-    (scheme, netloc, path, __, __, __) = url_parts
-    path = path.lstrip('/')
-    # regex to match 'v1' or 'v2.0' etc
-    if re.match('v\d+\.?\d*', path):
-        version = float(path.lstrip('v'))
-        endpoint = scheme + '://' + netloc
-    return endpoint, version
 
 
 def integrity_iter(iter, checksum):
@@ -112,31 +74,6 @@ def integrity_iter(iter, checksum):
         raise IOError(errno.EPIPE,
                       'Corrupt blob download. Checksum was %s expected %s' %
                       (md5sum, checksum))
-
-
-def safe_header(name, value):
-    if value is not None and name in SENSITIVE_HEADERS:
-        h = hashlib.sha1(value)
-        d = h.hexdigest()
-        return name, "{SHA1}%s" % d
-    else:
-        return name, value
-
-
-def endpoint_version_from_url(endpoint, default_version=None):
-    if endpoint:
-        endpoint, version = strip_version(endpoint)
-        return endpoint, version or default_version
-    else:
-        return None, default_version
-
-
-def debug_enabled(argv):
-    if bool(env('GLARECLIENT_DEBUG')) is True:
-        return True
-    if '--debug' in argv or '-d' in argv:
-        return True
-    return False
 
 
 class IterableWithLength(object):

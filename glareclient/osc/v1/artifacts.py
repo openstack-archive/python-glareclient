@@ -96,7 +96,7 @@ class ShowArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
@@ -170,12 +170,12 @@ class UpdateArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         parser.add_argument(
             '--name',
             metavar='<NAME>',
-            help='Name of the artifact',
+            help='Name of the artifact.',
         ),
         parser.add_argument(
             '--remove-property',
@@ -228,7 +228,7 @@ class DeleteArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
@@ -254,7 +254,7 @@ class ActivateArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
@@ -280,7 +280,7 @@ class DeactivateArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
@@ -306,7 +306,7 @@ class ReactivateArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
@@ -319,7 +319,7 @@ class ReactivateArtifact(command.ShowOne):
 
 
 class PublishArtifact(command.ShowOne):
-    """Publish  the artifact"""
+    """Publish the artifact"""
 
     def get_parser(self, prog_name):
         parser = super(PublishArtifact, self).get_parser(prog_name)
@@ -332,7 +332,7 @@ class PublishArtifact(command.ShowOne):
         parser.add_argument(
             'id',
             metavar='<ID>',
-            help='ID of the artifact to update',
+            help='ID of the artifact to update.',
         )
         return parser
 
