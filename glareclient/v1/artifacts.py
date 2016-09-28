@@ -231,3 +231,11 @@ class Controller(object):
         if checksum is not None and do_checksum:
             body = utils.integrity_iter(body, checksum)
         return utils.IterableWithLength(body, content_length)
+
+    def get_type_list(self):
+        """Get list of type names."""
+        resp, body = self.http_client.get('/schemas')
+        type_list = []
+        for type_name, type_schema in six.iteritems(body['schemas']):
+            type_list.append((type_name, type_schema['version']))
+        return type_list
