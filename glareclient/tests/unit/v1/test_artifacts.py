@@ -178,6 +178,35 @@ class TestController(testtools.TestCase):
         }
 
         expect_body = [{'path': '/name',
+                        'op': 'replace',
+                        'value': None}]
+
+        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+                   exp_headers,
+                   expect_body)]
+
+        self.assertEqual(expect, self.api.calls)
+        self.api.calls = []
+
+        self.controller.update(artifact_id=art_id,
+                               remove_props=['metadata/key1'],
+                               type_name='sample_artifact')
+
+        expect_body = [{'path': '/metadata/key1',
+                        'op': 'remove'}]
+
+        expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,
+                   exp_headers,
+                   expect_body)]
+
+        self.assertEqual(expect, self.api.calls)
+        self.api.calls = []
+
+        self.controller.update(artifact_id=art_id,
+                               remove_props=['releases/1'],
+                               type_name='sample_artifact')
+
+        expect_body = [{'path': '/releases/1',
                         'op': 'remove'}]
 
         expect = [('PATCH', '/artifacts/sample_artifact/%s' % art_id,

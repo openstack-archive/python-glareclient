@@ -77,8 +77,16 @@ class Controller(object):
         if remove_props:
             for prop_name in remove_props:
                 if prop_name not in kwargs:
-                    changes.append({'op': 'remove',
-                                    'path': '/%s' % prop_name})
+                    if '/' in prop_name:
+                        # we remove all values in dicts and lists explicitly,
+                        # i.e. matadata/key or releases/1
+                        changes.append({'op': 'remove',
+                                        'path': '/%s' % prop_name})
+                    else:
+                        # in other cases we just replace the value with None
+                        changes.append({'op': 'replace',
+                                        'path': '/%s' % prop_name,
+                                        'value': None})
         for prop_name in kwargs:
             changes.append({'op': 'add', 'path': '/%s' % prop_name,
                             'value': kwargs[prop_name]})
