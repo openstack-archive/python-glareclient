@@ -38,13 +38,15 @@ def mock_list(*args, **kwargs):
              'version': '0.0.0',
              'owner': 'f649c77999e449e89627024f71b76603',
              'visibility': 'private',
-             'status': 'active'},
+             'status': 'active',
+             'type_name': 'images'},
             {'id': '48d35c1d-6739-459b-bbda-e4dcba8a684a',
              'name': 'art2',
              'version': '0.0.0',
              'owner': 'f649c77999e449e89627024f71b76603',
              'visibility': 'private',
-             'status': 'active'}]
+             'status': 'active',
+             'type_name': 'heat_templates'}]
 
 
 def mock_get(*args, **kwargs):
