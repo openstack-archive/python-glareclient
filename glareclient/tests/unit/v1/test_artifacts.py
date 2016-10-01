@@ -306,6 +306,23 @@ class TestController(testtools.TestCase):
                    'data')]
         self.assertEqual(expect, self.api.calls)
 
+    def test_upload_blob_custom_content_type(self):
+        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
+        self.controller.upload_blob(artifact_id=art_id,
+                                    type_name='sample_artifact',
+                                    blob_property='blob',
+                                    data='{"a":"b"}',
+                                    content_type='application/json',)
+
+        exp_headers = {
+            'Content-Type': 'application/json'
+        }
+
+        expect = [('PUT', '/artifacts/sample_artifact/%s/blob' % art_id,
+                   exp_headers,
+                   {"a": "b"})]
+        self.assertEqual(expect, self.api.calls)
+
     def test_download_blob(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
         self.controller.download_blob(artifact_id=art_id,

@@ -63,6 +63,12 @@ class UploadBlob(command.ShowOne):
             help='Name of the blob field.'
         )
         parser.add_argument(
+            '--content-type',
+            metavar='<CONTENT_TYPE>',
+            default='application/octet-stream',
+            help='Content-type of the blob.'
+        )
+        parser.add_argument(
             '--progress',
             help='Show download progress bar.'
         )
@@ -83,8 +89,8 @@ class UploadBlob(command.ShowOne):
                 blob = progressbar.VerboseFileWrapper(blob, file_size)
 
         client.artifacts.upload_blob(parsed_args.id,
-                                     parsed_args.blob_property,
-                                     blob,
+                                     parsed_args.blob_property, blob,
+                                     content_type=parsed_args.content_type,
                                      type_name=parsed_args.type_name)
 
         data = client.artifacts.get(parsed_args.id,

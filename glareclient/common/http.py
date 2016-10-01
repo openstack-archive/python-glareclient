@@ -62,21 +62,29 @@ def _chunk_body(body):
 
 
 def _set_request_params(kwargs_params):
+    """Handle the common parameters used to send the request."""
+
     data = kwargs_params.pop('data', None)
     params = copy.deepcopy(kwargs_params)
     headers = params.get('headers', {})
-    content_type = headers.get('Content-Type', 'application/json')
+    content_type = headers.get('Content-Type')
+    stream = params.get("stream", False)
 
-    if data is not None and not isinstance(data, six.string_types):
-        if content_type.startswith('application/json'):
-            data = jsonutils.dumps(data)
-        if content_type == 'application/octet-stream':
+    if stream:
+        if data is not None:
             data = _chunk_body(data)
+        content_type = content_type or 'application/octet-stream'
+    elif data is not None and not isinstance(data, six.string_types):
+        try:
+            data = jsonutils.dumps(data)
+        except TypeError:
+            raise exc.HTTPBadRequest("json is malformed.")
 
     params['data'] = data
-    headers.update({'Content-Type': content_type})
+    headers.update(
+        {'Content-Type': content_type or 'application/json'})
     params['headers'] = headers
-    params['stream'] = content_type == 'application/octet-stream'
+    params['stream'] = stream
 
     return params
 
