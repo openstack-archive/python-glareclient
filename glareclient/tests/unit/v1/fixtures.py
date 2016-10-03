@@ -198,5 +198,16 @@ data_fixtures = {
                 'heat_environments': {'name': 'heat_environments',
                                       'version': '1.0'}}}
         )
+    },
+    '/schemas/images': {
+        'GET': (
+            {},
+            {'schemas': {
+                'images': {'name': 'images',
+                           'version': '1.0',
+                           'properties': {'foo': 'bar'}
+                           }}}
+        )
     }
+
 }

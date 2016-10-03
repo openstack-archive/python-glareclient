@@ -341,3 +341,69 @@ class TestPublishArtifacts(TestArtifacts):
         name_fields = set([column[0] for column in data])
         # Check that columns are correct
         self.assertEqual(self.COLUMNS, name_fields)
+
+
+class TypeSchema(TestArtifacts):
+
+    def setUp(self):
+        super(TypeSchema, self).setUp()
+        self.artifact_mock.call.return_value = \
+            api_art.Controller(self.http, type_name='sample_artifact')
+
+        # Command to test
+        self.cmd = osc_art.TypeSchema(self.app, None)
+
+    def test_get_schema(self):
+        arglist = ['sample_artifact']
+        verify = [('type_name', 'sample_artifact')]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+
+        exp_columns = ['Name', 'Glare_type', 'Mutable', 'Required',
+                       'Sortable', 'Filters', 'Available_values']
+        exp_data = [
+            (u'image', u'Blob', False, False, False, [], ''),
+            (u'updated_at', u'DateTime', False, True, True,
+             [u'eq', u'neq', u'in', u'gt', u'gte', u'lt', u'lte'], ''),
+            (u'owner', u'String', False, False, True,
+             [u'eq', u'neq', u'in'], ''),
+            (u'provided_by', u'StringDict', False, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'id', u'String', False, True, True, [u'eq', u'neq', u'in'], ''),
+            (u'environment', u'Blob', False, True, False, [], ''),
+            (u'version', u'String', False, False, True,
+             [u'eq', u'neq', u'in', u'gt', u'gte', u'lt', u'lte'], ''),
+            (u'blob', u'Blob', True, False, False, [], ''),
+            (u'template', u'Blob', False, True, False, [], ''),
+            (u'metadata', u'StringDict', False, False, False,
+             [u'eq', u'neq'], ''),
+            (u'status', u'String', False, True, True, [u'eq', u'neq', u'in'],
+             [u'drafted', u'active', u'deactivated', u'deleted']),
+            (u'description', u'String', True, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'tags', u'StringList', True, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'activated_at', u'DateTime', False, False, True,
+             [u'eq', u'neq', u'in', u'gt', u'gte', u'lt', u'lte'], ''),
+            (u'supported_by', u'StringDict', False, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'visibility', u'String', False, True, True, [u'eq'], ''),
+            (u'icon', u'Blob', False, False, False, [], ''),
+            (u'name', u'String', False, False, True,
+             [u'eq', u'neq', u'in'], ''),
+            (u'license', u'String', False, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'package', u'Blob', False, False, False, [], ''),
+            (u'created_at', u'DateTime', False, True, True,
+             [u'eq', u'neq', u'in', u'gt', u'gte', u'lt', u'lte'], ''),
+            (u'license_url', u'String', False, False, False,
+             [u'eq', u'neq', u'in'], ''),
+            (u'release', u'StringList', False, False, False,
+             [u'eq', u'neq', u'in'], '')]
+
+        data.sort(key=lambda x: x[0])
+        exp_data.sort(key=lambda x: x[0])
+
+        # Check that columns are correct
+        self.assertEqual(exp_columns, columns)
+        self.assertEqual(exp_data, data)
