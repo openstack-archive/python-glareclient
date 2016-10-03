@@ -367,3 +367,10 @@ class TestController(testtools.TestCase):
                                   type_name='sample_artifact')
         self.assertEqual(art_id, art['sample_artifact'][0]['id'])
         self.assertEqual('art_1', art['sample_artifact'][0]['name'])
+
+    def test_type_list(self):
+        data = self.controller.get_type_list()
+        expect_data = [('images', '1.0'), ('heat_environments', '1.0')]
+        expect_call = [('GET', '/schemas', {}, None)]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertEqual(expect_data, data)

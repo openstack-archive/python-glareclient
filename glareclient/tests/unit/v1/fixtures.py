@@ -190,4 +190,13 @@ data_fixtures = {
             {}
         )
     },
+    '/schemas': {
+        'GET': (
+            {},
+            {'schemas': {
+                'images': {'name': 'images', 'version': '1.0'},
+                'heat_environments': {'name': 'heat_environments',
+                                      'version': '1.0'}}}
+        )
+    }
 }

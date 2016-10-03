@@ -337,3 +337,21 @@ class PublishArtifact(command.ShowOne):
         data = client.artifacts.publish(parsed_args.id,
                                         type_name=parsed_args.type_name)
         return self.dict2columns(data)
+
+
+class TypeList(command.Lister):
+    """List of type names"""
+
+    def get_parser(self, prog_name):
+        parser = super(TypeList, self).get_parser(prog_name)
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+        data = client.artifacts.get_type_list()
+
+        columns = ('name', 'version')
+        column_headers = [c.capitalize() for c in columns]
+        return (column_headers,
+                data)
