@@ -19,8 +19,27 @@ from osc_lib.command import command
 from glareclient.common import utils as glare_utils
 from glareclient.osc.v1 import TypeMapperAction
 
+from pprint import pformat
+import six
 
 LOG = logging.getLogger(__name__)
+
+
+def print_artifact(client, data, type_name):
+        schema = \
+            client.artifacts.get_type_schema(type_name=type_name)['properties']
+
+        columns = ('field', 'value', 'glare type')
+        column_headers = [c.capitalize() for c in columns]
+        table = []
+
+        for key, value in six.iteritems(data):
+            if schema[key]['glareType'] == 'Blob':
+                value = pformat(value)
+            table.append((key, value, schema[key]['glareType']))
+
+        return (column_headers,
+                table)
 
 
 class ListArtifacts(command.Lister):
@@ -82,7 +101,7 @@ class ListArtifacts(command.Lister):
                 table)
 
 
-class ShowArtifact(command.ShowOne):
+class ShowArtifact(command.Lister):
     """Show details artifact"""
 
     def get_parser(self, prog_name):
@@ -103,12 +122,13 @@ class ShowArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
+
         data = client.artifacts.get(parsed_args.id,
                                     type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class CreateArtifact(command.ShowOne):
+class CreateArtifact(command.Lister):
     """Create a new artifact"""
 
     def get_parser(self, prog_name):
@@ -153,10 +173,10 @@ class CreateArtifact(command.ShowOne):
                                        type_name=parsed_args.type_name,
                                        version=parsed_args.artifact_version,
                                        **prop)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class UpdateArtifact(command.ShowOne):
+class UpdateArtifact(command.Lister):
     """Update the properties of the artifact"""
 
     def get_parser(self, prog_name):
@@ -206,10 +226,10 @@ class UpdateArtifact(command.ShowOne):
             parsed_args.id, type_name=parsed_args.type_name,
             remove_props=parsed_args.remove_property, **prop)
 
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class DeleteArtifact(command.ShowOne):
+class DeleteArtifact(command.Command):
     """Delete the artifact"""
 
     def get_parser(self, prog_name):
@@ -230,12 +250,11 @@ class DeleteArtifact(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.delete(parsed_args.id,
-                                       type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        client.artifacts.delete(parsed_args.id,
+                                type_name=parsed_args.type_name)
 
 
-class ActivateArtifact(command.ShowOne):
+class ActivateArtifact(command.Lister):
     """Activate the artifact"""
 
     def get_parser(self, prog_name):
@@ -258,10 +277,10 @@ class ActivateArtifact(command.ShowOne):
         client = self.app.client_manager.artifact
         data = client.artifacts.activate(
             parsed_args.id, type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class DeactivateArtifact(command.ShowOne):
+class DeactivateArtifact(command.Lister):
     """Deactivate the artifact"""
 
     def get_parser(self, prog_name):
@@ -284,10 +303,10 @@ class DeactivateArtifact(command.ShowOne):
         client = self.app.client_manager.artifact
         data = client.artifacts.deactivate(parsed_args.id,
                                            type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class ReactivateArtifact(command.ShowOne):
+class ReactivateArtifact(command.Lister):
     """Reactivate the artifact"""
 
     def get_parser(self, prog_name):
@@ -310,10 +329,10 @@ class ReactivateArtifact(command.ShowOne):
         client = self.app.client_manager.artifact
         data = client.artifacts.reactivate(parsed_args.id,
                                            type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
-class PublishArtifact(command.ShowOne):
+class PublishArtifact(command.Lister):
     """Publish the artifact"""
 
     def get_parser(self, prog_name):
@@ -336,7 +355,7 @@ class PublishArtifact(command.ShowOne):
         client = self.app.client_manager.artifact
         data = client.artifacts.publish(parsed_args.id,
                                         type_name=parsed_args.type_name)
-        return self.dict2columns(data)
+        return print_artifact(client, data, parsed_args.type_name)
 
 
 class TypeList(command.Lister):

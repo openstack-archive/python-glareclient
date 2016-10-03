@@ -239,3 +239,11 @@ class Controller(object):
         for type_name, type_schema in six.iteritems(body['schemas']):
             type_list.append((type_name, type_schema['version']))
         return type_list
+
+    def get_type_schema(self, type_name=None):
+        """Show schema of type name."""
+
+        type_name = self._check_type_name(type_name)
+        url = '/schemas/%s' % type_name
+        resp, body = self.http_client.get(url)
+        return body['schemas'][type_name]

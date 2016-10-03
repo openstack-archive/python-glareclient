@@ -29,6 +29,8 @@ class TestArtifacts(fakes.TestArtifacts):
         self.artifact_mock = \
             self.app.client_manager.artifact.artifacts
         self.http = mock.MagicMock()
+        self.COLUMNS = set(['id', 'name', 'owner',
+                            'status', 'version', 'visibility'])
 
 
 class TestListArtifacts(TestArtifacts):
@@ -108,20 +110,20 @@ class TestShowArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.ShowArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_show(self):
         arglist = ['sample_artifact', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
         verify = [('type_name', 'sample_artifact')]
-        COLUMNS = ('blob', 'environment', 'id', 'image', 'name', 'owner',
-                   'package', 'status', 'template', 'version', 'visibility')
+        COLUMNS = set(['blob', 'environment', 'id', 'image',
+                       'name', 'owner', 'package', 'status',
+                       'template', 'version', 'visibility'])
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(COLUMNS, columns)
+        self.assertEqual(COLUMNS, name_fields)
 
     def test_artifact_show_without_id(self):
         arglist = ['sample_artifact']
@@ -147,8 +149,6 @@ class TestCreateArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.CreateArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_create_artifact(self):
         arglist = ['sample_artifact', 'art',
@@ -160,8 +160,9 @@ class TestCreateArtifacts(TestArtifacts):
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
     def test_create_artifact_multiproperty(self):
         arglist = ['sample_artifact', 'art',
@@ -191,8 +192,6 @@ class TestUpdateArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.UpdateArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_update(self):
         arglist = ['sample_artifact',
@@ -203,8 +202,10 @@ class TestUpdateArtifacts(TestArtifacts):
                   ('property', ['blah=1', 'blag=2'])]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
     def test_artifact_update_bad(self):
         arglist = ['sample_artifact',
@@ -226,8 +227,9 @@ class TestUpdateArtifacts(TestArtifacts):
                   ('remove_property', ['prop1', 'prop2'])]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
 
 class TestDeleteArtifacts(TestArtifacts):
@@ -239,8 +241,6 @@ class TestDeleteArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.DeleteArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_delete(self):
         arglist = ['sample_artifact',
@@ -248,9 +248,7 @@ class TestDeleteArtifacts(TestArtifacts):
         verify = [('type_name', 'sample_artifact'),
                   ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertIsNone(self.cmd.take_action(parsed_args))
 
 
 class TestActivateArtifacts(TestArtifacts):
@@ -262,8 +260,6 @@ class TestActivateArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.ActivateArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_activate(self):
         arglist = ['sample_artifact',
@@ -272,8 +268,10 @@ class TestActivateArtifacts(TestArtifacts):
                   ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
 
 class TestDeactivateArtifacts(TestArtifacts):
@@ -285,8 +283,6 @@ class TestDeactivateArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.DeactivateArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_deactivate(self):
         arglist = ['sample_artifact',
@@ -295,8 +291,10 @@ class TestDeactivateArtifacts(TestArtifacts):
                   ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
 
 class TestReactivateArtifacts(TestArtifacts):
@@ -308,8 +306,6 @@ class TestReactivateArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.ReactivateArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_artifact_rectivate(self):
         arglist = ['sample_artifact',
@@ -318,8 +314,10 @@ class TestReactivateArtifacts(TestArtifacts):
                   ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
 
 
 class TestPublishArtifacts(TestArtifacts):
@@ -331,8 +329,6 @@ class TestPublishArtifacts(TestArtifacts):
 
         # Command to test
         self.cmd = osc_art.PublishArtifact(self.app, None)
-        self.COLUMNS = ('id', 'name', 'owner',
-                        'status', 'version', 'visibility')
 
     def test_publish_delete(self):
         arglist = ['sample_artifact',
@@ -341,5 +337,7 @@ class TestPublishArtifacts(TestArtifacts):
                   ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
         # Check that columns are correct
-        self.assertEqual(self.COLUMNS, columns)
+        self.assertEqual(self.COLUMNS, name_fields)
