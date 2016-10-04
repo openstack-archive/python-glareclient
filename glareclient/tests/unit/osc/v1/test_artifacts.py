@@ -82,8 +82,8 @@ class TestListArtifacts(TestArtifacts):
         self.check_parser(self.cmd, arglist, verify)
 
     def test_artifact_list_with_sort(self):
-        arglist = ['images', '--sort', 'name:asc']
-        verify = [('type_name', 'images'),
+        arglist = ['sample_artifact', '--sort', 'name:asc']
+        verify = [('type_name', 'sample_artifact'),
                   ('sort', 'name:asc')]
 
         self.check_parser(self.cmd, arglist, verify)
@@ -99,19 +99,19 @@ class TestListArtifacts(TestArtifacts):
     def test_artifact_list_page_size(self):
         arglist = ['images', '--page-size', '1']
         verify = [('type_name', 'images'),
-                  ('page_size', '1')]
+                  ('page_size', 1)]
         self.check_parser(self.cmd, arglist, verify)
 
     def test_artifact_list_limit(self):
         arglist = ['images', '--limit', '2']
         verify = [('type_name', 'images'),
-                  ('limit', '2')]
+                  ('limit', 2)]
         self.check_parser(self.cmd, arglist, verify)
 
     def test_artifact_list_multilimit(self):
         arglist = ['images', '--limit', '2', '--limit', '1']
         verify = [('type_name', 'images'),
-                  ('limit', '1')]
+                  ('limit', 1)]
         self.check_parser(self.cmd, arglist, verify)
 
 

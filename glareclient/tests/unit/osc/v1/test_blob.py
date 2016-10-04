@@ -231,7 +231,7 @@ class TestDownloadBlob(TestBlobs):
         arglist = ['images',
                    'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
                    '--file', '/path/to/file',
-                   '--progress', 'True']
+                   '--progress']
         verify = [('type_name', 'images')]
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
