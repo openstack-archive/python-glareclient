@@ -15,10 +15,11 @@
 
 import sys
 
-
-from glareclient.common import utils as g_utils
 import mock
 from osc_lib.tests import utils
+
+from glareclient.common import utils as g_utils
+from glareclient.tests.unit.osc.v1 import fakes_schemas
 
 blob_fixture = {
     "status": "active",
@@ -72,6 +73,10 @@ def mock_g_servs(*args, **kwargs):
             'status': 'active'}
 
 
+def mock_g_schema(*args, **kwargs):
+    return fakes_schemas.FIXTURE_SCHEMA
+
+
 def mock_get_data_file(*args, **kwargs):
     return 'data'
 
@@ -92,6 +97,8 @@ class TestArtifacts(utils.TestCommand):
         self.app.client_manager.artifact.artifacts.publish = mock_g_servs
         self.app.client_manager.artifact.blobs.upload_blob = mock_g_servs
         self.app.client_manager.artifact.blobs.download_blob = mock_g_servs
+        self.app.client_manager.artifact.artifacts.get_type_schema = \
+            mock_g_schema
         g_utils.get_data_file = mock.MagicMock()
         g_utils.get_data_file = mock_get_data_file
         g_utils.save_blob = mock.MagicMock()

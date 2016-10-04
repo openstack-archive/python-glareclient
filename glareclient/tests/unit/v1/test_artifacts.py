@@ -374,3 +374,11 @@ class TestController(testtools.TestCase):
         expect_call = [('GET', '/schemas', {}, None)]
         self.assertEqual(expect_call, self.api.calls)
         self.assertEqual(expect_data, data)
+
+    def test_get_schema(self):
+        data = self.controller.get_type_schema(type_name='images')
+        expect_data = {'name': 'images', 'version': '1.0',
+                       'properties': {'foo': 'bar'}}
+        expect_call = [('GET', '/schemas/images', {}, None)]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertEqual(expect_data, data)

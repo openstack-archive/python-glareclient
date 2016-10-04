@@ -377,3 +377,44 @@ class TypeList(command.Lister):
         column_headers = [c.capitalize() for c in columns]
         return (column_headers,
                 data)
+
+
+class TypeSchema(command.Lister):
+    """Schema of type name."""
+
+    def get_parser(self, prog_name):
+        parser = super(TypeSchema, self).get_parser(prog_name)
+        parser.add_argument(
+            'type_name',
+            metavar='<TYPE_NAME>',
+            action=TypeMapperAction,
+            help='Name of artifact type.',
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+        data = client.artifacts.get_type_schema(
+            type_name=parsed_args.type_name)['properties']
+
+        columns = ('name', 'glare_type', 'mutable', 'required',
+                   'sortable', 'filters', 'available_values')
+        column_headers = [c.capitalize() for c in columns]
+
+        table = []
+
+        for name, values in six.iteritems(data):
+            row = (
+                name,
+                values.get('glareType'),
+                values.get('mutable', False),
+                values.get('required_on_activate', True),
+                values.get('sortable', False),
+                values.get('filter_ops'),
+                values.get('enum', '')
+            )
+            table.append(row)
+
+        return (column_headers,
+                table)
