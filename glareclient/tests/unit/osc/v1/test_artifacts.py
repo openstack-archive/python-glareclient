@@ -56,6 +56,20 @@ class TestListArtifacts(TestArtifacts):
 
         self.check_parser(self.cmd, arglist, verify)
 
+    def test_artifact_list_all(self):
+        arglist = ['all']
+        verify = [('type_name', 'all')]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+
+        columns, data = self.cmd.take_action(parsed_args)
+
+        # Check that columns are correct
+        self.assertEqual(['Id', 'Name', 'Version', 'Type name',
+                          'Owner', 'Visibility', 'Status'], columns)
+
+        self.check_parser(self.cmd, arglist, verify)
+
     def test_artifact_list_with_multifilters(self):
         arglist = ['sample_artifact',
                    '--filter', 'spam:spam',

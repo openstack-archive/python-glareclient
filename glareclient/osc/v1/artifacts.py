@@ -70,11 +70,14 @@ class ListArtifacts(command.Lister):
                   'sort': parsed_args.sort,
                   'page_size': parsed_args.page_size}
 
-        data = client.artifacts.list(type_name=parsed_args.type_name,
-                                     **params)
+        type_name = parsed_args.type_name
 
-        columns = ('id', 'name', 'version', 'owner', 'visibility', 'status')
-        column_headers = [c.capitalize() for c in columns]
+        data = client.artifacts.list(type_name=type_name, **params)
+
+        columns = ['id', 'name', 'version', 'owner', 'visibility', 'status']
+        if type_name == 'all':
+            columns.insert(3, 'type_name')
+        column_headers = [c.capitalize().replace("_", " ") for c in columns]
         table = []
         for af in data:
             table.append(glare_utils.get_item_properties(af, columns))
