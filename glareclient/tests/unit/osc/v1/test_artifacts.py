@@ -153,6 +153,20 @@ class TestShowArtifacts(TestArtifacts):
         with testtools.ExpectedException(ParserException):
             self.check_parser(self.cmd, arglist, verify)
 
+    def test_artifact_show_by_name(self):
+        arglist = ['images', 'name1']
+        verify = [('type_name', 'images'), ('id', False)]
+        COLUMNS = set(['blob', 'environment', 'id', 'image',
+                       'name', 'owner', 'package', 'status',
+                       'template', 'version', 'visibility'])
+
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
+        # Check that columns are correct
+        self.assertEqual(COLUMNS, name_fields)
+
 
 class TestCreateArtifacts(TestArtifacts):
 
@@ -258,9 +272,10 @@ class TestDeleteArtifacts(TestArtifacts):
 
     def test_artifact_delete(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
         verify = [('type_name', 'images'),
-                  ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         self.assertIsNone(self.cmd.take_action(parsed_args))
 
@@ -277,9 +292,11 @@ class TestActivateArtifacts(TestArtifacts):
 
     def test_artifact_activate(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   '--id']
         verify = [('type_name', 'images'),
-                  ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 
@@ -300,9 +317,10 @@ class TestDeactivateArtifacts(TestArtifacts):
 
     def test_artifact_deactivate(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
         verify = [('type_name', 'images'),
-                  ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 
@@ -323,9 +341,10 @@ class TestReactivateArtifacts(TestArtifacts):
 
     def test_artifact_rectivate(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
         verify = [('type_name', 'images'),
-                  ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 
@@ -346,9 +365,10 @@ class TestPublishArtifacts(TestArtifacts):
 
     def test_publish_delete(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba']
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
         verify = [('type_name', 'images'),
-                  ('id', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba')]
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         columns, data = self.cmd.take_action(parsed_args)
 

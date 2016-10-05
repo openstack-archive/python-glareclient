@@ -214,5 +214,33 @@ data_fixtures = {
                            'properties': {'foo': 'bar'}
                            }}}
         )
-    }
+    },
+    '/artifacts/images?name=name1&version=latest': {
+        'GET': (
+            # headers
+            {},
+            # response
+            {'images': [
+                {
+                    'name': 'name1',
+                    'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
+                    'version': '3.0.0'
+                }
+            ]},
+        ),
+    },
+    '/artifacts/images?name=name1&version=1.0.0': {
+        'GET': (
+            # headers
+            {},
+            # response
+            {'images': [
+                {
+                    'name': 'name1',
+                    'id': '3a4560a1-e585-443e-9b39-553b46ec92d1',
+                    'version': '1.0.0'
+                }
+            ]},
+        ),
+    },
 }

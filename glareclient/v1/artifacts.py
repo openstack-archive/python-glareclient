@@ -104,6 +104,19 @@ class Controller(object):
         resp, body = self.http_client.get(url)
         return body
 
+    def get_by_name(self, name, version='latest', type_name=None):
+        """Get information about an artifact by name.
+
+        :param name: name of the artifact to get.
+        """
+        type_name = self._check_type_name(type_name)
+        url = '/artifacts/%s?version=%s&name=%s' % (type_name, version, name)
+        resp, body = self.http_client.get(url)
+        if not body[type_name]:
+            utils.exit('Artifact with name=%s and version=%s not found.' %
+                       (name, version))
+        return body[type_name][0]
+
     def list(self, type_name=None, **kwargs):
         """Retrieve a listing of artifacts objects.
 

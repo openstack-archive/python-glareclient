@@ -42,6 +42,18 @@ def print_artifact(client, data, type_name):
                 table)
 
 
+def get_artifact_id(client, parsed_args):
+    if parsed_args.id:
+        if parsed_args.artifact_version != 'latest':
+            LOG.warn('Specified version is not considered when '
+                     'receiving of the artifact by ID.')
+        return parsed_args.name
+
+    return client.artifacts.get_by_name(parsed_args.name,
+                                        version=parsed_args.artifact_version,
+                                        type_name=parsed_args.type_name)['id']
+
+
 class ListArtifacts(command.Lister):
     """List of artifacts"""
 
@@ -118,18 +130,31 @@ class ShowArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to show.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
 
-        data = client.artifacts.get(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.get(af_id,
                                     type_name=parsed_args.type_name)
+
         return print_artifact(client, data, parsed_args.type_name)
 
 
@@ -200,7 +225,18 @@ class UpdateArtifact(command.Lister):
         parser.add_argument(
             '--name', '-n',
             metavar='<NAME>',
-            help='Name of the artifact.',
+            help='Name or id of the artifact to update.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
         ),
         parser.add_argument(
             '--remove-property', '-r',
@@ -208,7 +244,7 @@ class UpdateArtifact(command.Lister):
             action='append',
             default=[],
             help='Property that will be removed.'
-        )
+        ),
         parser.add_argument(
             '--property', '-p',
             metavar='<key=value>',
@@ -227,8 +263,9 @@ class UpdateArtifact(command.Lister):
             prop[key] = value
 
         client = self.app.client_manager.artifact
+        af_id = get_artifact_id(client, parsed_args)
         data = client.artifacts.update(
-            parsed_args.id, type_name=parsed_args.type_name,
+            af_id, type_name=parsed_args.type_name,
             remove_props=parsed_args.remove_property, **prop)
 
         return print_artifact(client, data, parsed_args.type_name)
@@ -246,16 +283,28 @@ class DeleteArtifact(command.Command):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to delete.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        client.artifacts.delete(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        client.artifacts.delete(af_id,
                                 type_name=parsed_args.type_name)
 
 
@@ -271,17 +320,29 @@ class ActivateArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to activate.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.activate(
-            parsed_args.id, type_name=parsed_args.type_name)
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.activate(af_id,
+                                         type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
 
 
@@ -297,16 +358,28 @@ class DeactivateArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to deactivate.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.deactivate(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.deactivate(af_id,
                                            type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
 
@@ -323,16 +396,28 @@ class ReactivateArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to reactivate.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.reactivate(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.reactivate(af_id,
                                            type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
 
@@ -349,16 +434,28 @@ class PublishArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to publish.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         return parser
 
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        data = client.artifacts.publish(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.publish(af_id,
                                         type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
 

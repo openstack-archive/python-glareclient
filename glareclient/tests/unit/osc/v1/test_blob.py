@@ -251,7 +251,7 @@ class TestAddLocation(TestBlobs):
 
     def test_add_location(self):
         arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id',
                    '--url', 'fake_url',
                    '--md5', "35d83e8eedfbdb87ff97d1f2761f8ebf",
                    '--sha1', "942854360eeec1335537702399c5aed940401602",

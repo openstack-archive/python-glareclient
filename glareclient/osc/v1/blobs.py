@@ -36,6 +36,18 @@ def _default_blob_property(type_name):
     utils.exit('Unknown artifact type. Please specify --blob-property.')
 
 
+def get_artifact_id(client, parsed_args):
+    if parsed_args.id:
+        if parsed_args.artifact_version != 'latest':
+            LOG.warn('Specified version is not considered when '
+                     'receiving of the artifact by ID.')
+        return parsed_args.name
+
+    return client.artifacts.get_by_name(parsed_args.name,
+                                        version=parsed_args.artifact_version,
+                                        type_name=parsed_args.type_name)['id']
+
+
 class UploadBlob(command.ShowOne):
     """Upload blob"""
 
@@ -48,10 +60,21 @@ class UploadBlob(command.ShowOne):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to upload.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         parser.add_argument(
             '--file',
             metavar='<FILE_PATH>',
@@ -78,6 +101,7 @@ class UploadBlob(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
+        af_id = get_artifact_id(client, parsed_args)
 
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(
@@ -89,13 +113,11 @@ class UploadBlob(command.ShowOne):
             if file_size is not None:
                 blob = progressbar.VerboseFileWrapper(blob, file_size)
 
-        client.artifacts.upload_blob(parsed_args.id,
-                                     parsed_args.blob_property, blob,
+        client.artifacts.upload_blob(af_id, parsed_args.blob_property, blob,
                                      content_type=parsed_args.content_type,
                                      type_name=parsed_args.type_name)
 
-        data = client.artifacts.get(parsed_args.id,
-                                    type_name=parsed_args.type_name)
+        data = client.artifacts.get(af_id, type_name=parsed_args.type_name)
 
         data_to_display = {'blob_property': parsed_args.blob_property}
         data_to_display.update(data[parsed_args.blob_property])
@@ -114,10 +136,21 @@ class DownloadBlob(command.Command):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to download.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         parser.add_argument(
             '--progress',
             action='store_true',
@@ -144,7 +177,8 @@ class DownloadBlob(command.Command):
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(
                 parsed_args.type_name)
-        data = client.artifacts.download_blob(parsed_args.id,
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.download_blob(af_id,
                                               parsed_args.blob_property,
                                               type_name=parsed_args.type_name)
         if parsed_args.progress:
@@ -170,10 +204,21 @@ class AddLocation(command.ShowOne):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to download.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-v',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
         parser.add_argument(
             '--url',
             metavar='<FILE_PATH>',
@@ -210,6 +255,7 @@ class AddLocation(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
+        af_id = get_artifact_id(client, parsed_args)
 
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(
@@ -223,13 +269,13 @@ class AddLocation(command.ShowOne):
         }
 
         client.artifacts.add_external_location(
-            parsed_args.id,
+            af_id,
             parsed_args.blob_property,
             data,
             content_type=parsed_args.content_type,
             type_name=parsed_args.type_name)
 
-        data = client.artifacts.get(parsed_args.id,
+        data = client.artifacts.get(af_id,
                                     type_name=parsed_args.type_name)
 
         data_to_display = {'blob_property': parsed_args.blob_property}

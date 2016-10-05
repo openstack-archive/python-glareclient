@@ -368,6 +368,21 @@ class TestController(testtools.TestCase):
         self.assertEqual(art_id, art['images'][0]['id'])
         self.assertEqual('art_1', art['images'][0]['name'])
 
+    def test_get_by_name(self):
+        art_name = 'name1'
+        art = self.controller.get_by_name(name=art_name,
+                                          type_name='images')
+        self.assertEqual(art_name, art['name'])
+        self.assertEqual('3.0.0', art['version'])
+
+    def test_get_by_name_with_version(self):
+        art_name = 'name1'
+        art = self.controller.get_by_name(name=art_name,
+                                          version='1.0.0',
+                                          type_name='images')
+        self.assertEqual(art_name, art['name'])
+        self.assertEqual('1.0.0', art['version'])
+
     def test_type_list(self):
         data = self.controller.get_type_list()
         expect_data = [('images', '1.0'), ('heat_environments', '1.0')]
