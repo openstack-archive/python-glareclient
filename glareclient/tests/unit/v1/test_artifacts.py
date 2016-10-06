@@ -382,3 +382,18 @@ class TestController(testtools.TestCase):
         expect_call = [('GET', '/schemas/images', {}, None)]
         self.assertEqual(expect_call, self.api.calls)
         self.assertEqual(expect_data, data)
+
+    def test_add_external_location(self):
+        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a8'
+        data = self.controller.add_external_location(art_id,
+                                                     'image',
+                                                     'http://fake_url',
+                                                     type_name='images')
+        expect_call = [
+            ('PUT',
+             '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a8/image',
+             {'Content-Type': 'application/vnd+openstack.'
+                              'glare-custom-location+json'},
+             'http://fake_url')]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertIsNone(data)

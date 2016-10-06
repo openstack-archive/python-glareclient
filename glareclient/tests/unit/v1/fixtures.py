@@ -190,6 +190,12 @@ data_fixtures = {
             {}
         )
     },
+    '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a8/image': {
+        'PUT': (
+            {},
+            ''
+        ),
+    },
     '/schemas': {
         'GET': (
             {},
@@ -209,5 +215,4 @@ data_fixtures = {
                            }}}
         )
     }
-
 }

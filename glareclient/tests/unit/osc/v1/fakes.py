@@ -97,6 +97,8 @@ class TestArtifacts(utils.TestCommand):
         self.app.client_manager.artifact.artifacts.publish = mock_g_servs
         self.app.client_manager.artifact.blobs.upload_blob = mock_g_servs
         self.app.client_manager.artifact.blobs.download_blob = mock_g_servs
+        self.app.client_manager.artifact.blobs.add_external_location = \
+            mock_g_servs
         self.app.client_manager.artifact.artifacts.get_type_schema = \
             mock_g_schema
         g_utils.get_data_file = mock.MagicMock()
