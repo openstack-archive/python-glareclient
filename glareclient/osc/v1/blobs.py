@@ -155,3 +155,82 @@ class DownloadBlob(command.Command):
                    'blob. Please specify a local file with --file to save '
                    'downloaded blob or redirect output to another source.')
             utils.exit(msg)
+
+
+class AddLocation(command.ShowOne):
+    """Add external location"""
+
+    def get_parser(self, prog_name):
+        parser = super(AddLocation, self).get_parser(prog_name)
+        parser.add_argument(
+            'type_name',
+            metavar='<TYPE_NAME>',
+            action=TypeMapperAction,
+            help='Name of artifact type.',
+        ),
+        parser.add_argument(
+            'id',
+            metavar='<ID>',
+            help='ID of the artifact to update.',
+        )
+        parser.add_argument(
+            '--url',
+            metavar='<FILE_PATH>',
+            help='External location that contains data to be uploaded.',
+        )
+        parser.add_argument(
+            '--md5',
+            metavar='<FILE_PATH>',
+            help='Specify a checksum md5.',
+        )
+        parser.add_argument(
+            '--sha1',
+            metavar='<FILE_PATH>',
+            help='Specify a checksum sha1.',
+        )
+        parser.add_argument(
+            '--sha256',
+            metavar='<FILE_PATH>',
+            help='Specify a checksum sha256.',
+        )
+        parser.add_argument(
+            '--blob-property',
+            metavar='<BLOB_PROPERTY>',
+            help='Name of the blob field.'
+        )
+        parser.add_argument(
+            '--content-type',
+            metavar='<CONTENT_TYPE>',
+            default='application/vnd+openstack.glare-custom-location+json',
+            help='Content-type of the blob.'
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+
+        if not parsed_args.blob_property:
+            parsed_args.blob_property = _default_blob_property(
+                parsed_args.type_name)
+
+        data = {
+            'url': parsed_args.url,
+            'md5': parsed_args.md5,
+            'sha1': parsed_args.sha1,
+            'sha256': parsed_args.sha256
+        }
+
+        client.artifacts.add_external_location(
+            parsed_args.id,
+            parsed_args.blob_property,
+            data,
+            content_type=parsed_args.content_type,
+            type_name=parsed_args.type_name)
+
+        data = client.artifacts.get(parsed_args.id,
+                                    type_name=parsed_args.type_name)
+
+        data_to_display = {'blob_property': parsed_args.blob_property}
+        data_to_display.update(data[parsed_args.blob_property])
+        return self.dict2columns(data_to_display)

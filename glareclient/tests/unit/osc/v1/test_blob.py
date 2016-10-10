@@ -236,3 +236,29 @@ class TestDownloadBlob(TestBlobs):
 
         parsed_args = self.check_parser(self.cmd, arglist, verify)
         self.cmd.take_action(parsed_args)
+
+
+class TestAddLocation(TestBlobs):
+    def setUp(self):
+        super(TestAddLocation, self).setUp()
+        self.blob_mock.call.return_value = \
+            api_art.Controller(self.http, type_name='images')
+
+        # Command to test
+        self.cmd = osc_blob.AddLocation(self.app, None)
+        self.COLUMNS = ('blob_property', 'content_type', 'external',
+                        'md5', 'sha1', 'sha256', 'size', 'status', 'url')
+
+    def test_add_location(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   '--url', 'fake_url',
+                   '--md5', "35d83e8eedfbdb87ff97d1f2761f8ebf",
+                   '--sha1', "942854360eeec1335537702399c5aed940401602",
+                   '--sha256', "d8a7834fc6652f316322d80196f6dcf2"
+                               "94417030e37c15412e4deb7a67a367dd"]
+        verify = [('type_name', 'images'), ('url', 'fake_url')]
+
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+        self.assertEqual(self.COLUMNS, columns)
