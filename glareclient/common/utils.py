@@ -18,7 +18,6 @@ from __future__ import print_function
 import errno
 import hashlib
 import os
-import six
 import sys
 
 if os.name == 'nt':
@@ -28,6 +27,7 @@ else:
 
 from oslo_utils import encodeutils
 from oslo_utils import importutils
+import requests
 
 SENSITIVE_HEADERS = ('X-Auth-Token', )
 
@@ -58,41 +58,40 @@ def exit(msg='', exit_code=1):
     sys.exit(exit_code)
 
 
-def integrity_iter(iter, checksum):
-    """Check blob integrity.
+class ResponseBlobWrapper(object):
+    """Represent HTTP response as iterator with known length."""
 
-    :raises: IOError
-    """
-    md5sum = hashlib.md5()
-    for chunk in iter:
-        yield chunk
-        if isinstance(chunk, six.string_types):
-            chunk = six.b(chunk)
-        md5sum.update(chunk)
-    md5sum = md5sum.hexdigest()
-    if md5sum != checksum:
-        raise IOError(errno.EPIPE,
-                      'Corrupt blob download. Checksum was %s expected %s' %
-                      (md5sum, checksum))
-
-
-class IterableWithLength(object):
-    def __init__(self, iterable, length):
-        self.iterable = iterable
-        self.length = length
+    def __init__(self, resp, verify_md5=True):
+        self.hash_md5 = resp.headers.get("Content-MD5")
+        self.check_md5 = hashlib.md5()
+        if 301 <= resp.status_code <= 302:
+            # NOTE(sskripnick): handle redirect manually to prevent sending
+            # auth token to external resource.
+            # Use stream=True to prevent reading whole response into memory.
+            # Set Accept-Encoding explicitly to "identity" because setting
+            # stream=True forces Accept-Encoding to be "gzip, defalate".
+            # It should be "identity" because we should know Content-Length.
+            resp = requests.get(resp.headers.get("Location"),
+                                headers={"Accept-Encoding": "identity"})
+        self.len = resp.headers.get("Content-Length", 0)
+        self.iter = resp.iter_content(65536)
 
     def __iter__(self):
-        try:
-            for chunk in self.iterable:
-                yield chunk
-        finally:
-            self.iterable.close()
+        return self
 
     def next(self):
-        return next(self.iterable)
+        try:
+            data = self.iter.next()
+            self.check_md5.update(data)
+            return data
+        except StopIteration:
+            if self.check_md5.hexdigest() != self.hash_md5:
+                raise IOError(errno.EPIPE,
+                              'Checksum mismatch: %s (expected %s)' %
+                              (self.check_md5.hexdigest(), self.hash_md5))
+            raise
 
-    def __len__(self):
-        return self.length
+    __next__ = next
 
 
 def get_item_properties(item, fields, mixed_case_fields=None, formatters=None):
@@ -158,60 +157,3 @@ def save_blob(data, path):
     finally:
         if path is not None:
             blob.close()
-
-
-def get_data_file(blob):
-    if blob:
-        return open(blob, 'rb')
-    else:
-        # distinguish cases where:
-        # (1) stdin is not valid (as in cron jobs):
-        #     glare ... <&-
-        # (2) blob is provided through standard input:
-        #     glare ... < /tmp/file or cat /tmp/file | glare ...
-        # (3) no blob provided:
-        #     glare ...
-        try:
-            os.fstat(0)
-        except OSError:
-            # (1) stdin is not valid (closed...)
-            return None
-        if not sys.stdin.isatty():
-            # (2) blob data is provided through standard input
-            blob_data = sys.stdin
-            if hasattr(sys.stdin, 'buffer'):
-                blob_data = sys.stdin.buffer
-            if msvcrt:
-                msvcrt.setmode(blob_data.fileno(), os.O_BINARY)
-            return blob_data
-        else:
-            # (3) no blob data provided
-            return None
-
-
-def get_file_size(file_obj):
-    """Analyze file-like object and attempt to determine its size.
-
-    :param file_obj: file-like object.
-    :retval The file's size or None if it cannot be determined.
-    """
-    if (hasattr(file_obj, 'seek') and hasattr(file_obj, 'tell') and
-            (six.PY2 or six.PY3 and file_obj.seekable())):
-        try:
-            curr = file_obj.tell()
-            file_obj.seek(0, os.SEEK_END)
-            size = file_obj.tell()
-            file_obj.seek(curr)
-            return size
-        except IOError as e:
-            if e.errno == errno.ESPIPE:
-                # Illegal seek. This means the file object
-                # is a pipe (e.g. the user is trying
-                # to pipe blob to the client,
-                # echo testdata | bin/glare add blah...), or
-                # that file object is empty, or that a file-like
-                # object which doesn't support 'seek/tell' has
-                # been supplied.
-                return
-            else:
-                raise

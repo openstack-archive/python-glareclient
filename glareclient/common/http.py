@@ -26,7 +26,6 @@ import requests
 import six
 from six.moves import urllib
 
-from glareclient._i18n import _
 from glareclient.common import exceptions as exc
 
 LOG = logging.getLogger(__name__)
@@ -52,43 +51,6 @@ def get_system_ca_file():
     LOG.warning("System ca file could not be found.")
 
 
-def _chunk_body(body):
-    chunk = body
-    while chunk:
-        chunk = body.read(CHUNKSIZE)
-        if not chunk:
-            break
-        yield chunk
-
-
-def _set_request_params(kwargs_params):
-    """Handle the common parameters used to send the request."""
-
-    data = kwargs_params.pop('data', None)
-    params = copy.deepcopy(kwargs_params)
-    headers = params.get('headers', {})
-    content_type = headers.get('Content-Type')
-    stream = params.get("stream", False)
-
-    if stream:
-        if data is not None:
-            data = _chunk_body(data)
-        content_type = content_type or 'application/octet-stream'
-    elif data is not None and not isinstance(data, six.string_types):
-        try:
-            data = jsonutils.dumps(data)
-        except TypeError:
-            raise exc.HTTPBadRequest("json is malformed.")
-
-    params['data'] = data
-    headers.update(
-        {'Content-Type': content_type or 'application/json'})
-    params['headers'] = headers
-    params['stream'] = stream
-
-    return params
-
-
 def _handle_response(resp):
         content_type = resp.headers.get('Content-Type')
         if not content_type:
@@ -105,17 +67,6 @@ def _handle_response(resp):
             # Do not read all response in memory when downloading a blob.
             body_iter = _close_after_stream(resp, CHUNKSIZE)
         return resp, body_iter
-
-
-def _close_after_stream(response, chunk_size):
-    """Iterate over the content and ensure the response is closed after."""
-    # Yield each chunk in the response body
-    for chunk in response.iter_content(chunk_size=chunk_size):
-        yield chunk
-    # Once we're done streaming the body, ensure everything is closed.
-    # This will return the connection to the HTTPConnectionPool in urllib3
-    # and ideally reduce the number of HTTPConnectionPool full warnings.
-    response.close()
 
 
 class HTTPClient(object):
@@ -305,8 +256,7 @@ class HTTPClient(object):
         return creds
 
     def json_request(self, url, method, **kwargs):
-        params = _set_request_params(kwargs)
-        resp = self.request(url, method, **params)
+        resp = self.request(url, method, **kwargs)
         return _handle_response(resp)
 
     def json_patch_request(self, url, method='PATCH', **kwargs):
@@ -336,36 +286,13 @@ class SessionClient(adapter.LegacyJsonAdapter):
     """HTTP client based on Keystone client session."""
 
     def request(self, url, method, **kwargs):
-        params = _set_request_params(kwargs)
-        redirect = kwargs.get('redirect')
-
         resp, body = super(SessionClient, self).request(
-            url, method,
-            **params)
+            url, method, **kwargs)
 
-        if 400 <= resp.status_code < 600:
-            raise exc.from_response(resp)
-        elif resp.status_code in (301, 302, 305):
-            if redirect:
-                location = resp.headers.get('location')
-                path = self.strip_endpoint(location)
-                resp = self.request(path, method, **kwargs)
-        elif resp.status_code == 300:
+        if resp.status_code == 300 or (400 <= resp.status_code < 600):
             raise exc.from_response(resp)
 
-        if resp.headers.get('Content-Type') == 'application/octet-stream':
-            body = _close_after_stream(resp, CHUNKSIZE)
         return resp, body
-
-    def strip_endpoint(self, location):
-        if location is None:
-            message = _("Location not returned with 302")
-            raise exc.InvalidEndpoint(message=message)
-        if (self.endpoint_override is not None and
-                location.lower().startswith(self.endpoint_override.lower())):
-                return location[len(self.endpoint_override):]
-        else:
-            return location
 
 
 def construct_http_client(*args, **kwargs):

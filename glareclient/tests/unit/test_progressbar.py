@@ -13,63 +13,65 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-
-import six
+import mock
+from six import StringIO
 import testtools
 
 from glareclient.common import progressbar
-from glareclient.tests import utils as test_utils
+
+MOD = 'glareclient.common.progressbar'
 
 
-class TestProgressBarWrapper(testtools.TestCase):
+class TestProgressBar(testtools.TestCase):
 
-    def test_iter_iterator_display_progress_bar(self):
-        size = 100
-        iterator = iter('X' * 100)
-        saved_stdout = sys.stdout
-        try:
-            sys.stdout = output = test_utils.FakeTTYStdout()
-            # Consume iterator.
-            data = list(progressbar.VerboseIteratorWrapper(iterator, size))
-            self.assertEqual(['X'] * 100, data)
-            self.assertEqual(
-                '[%s>] 100%%\n' % ('=' * 29),
-                output.getvalue()
-            )
-        finally:
-            sys.stdout = saved_stdout
+    @mock.patch(MOD + '.os')
+    def test_totalsize_fileno(self, mock_os):
+        mock_os.fstat.return_value.st_size = 43
+        fake_file = mock.Mock()
+        del fake_file.len
+        fake_file.fileno.return_value = 42
+        pb = progressbar.VerboseFileWrapper(fake_file)
+        self.assertEqual(43, pb._totalsize)
+        mock_os.fstat.assert_called_once_with(42)
 
-    def test_iter_file_display_progress_bar(self):
-        size = 98304
-        file_obj = six.StringIO('X' * size)
-        saved_stdout = sys.stdout
-        try:
-            sys.stdout = output = test_utils.FakeTTYStdout()
-            file_obj = progressbar.VerboseFileWrapper(file_obj, size)
-            chunksize = 1024
-            chunk = file_obj.read(chunksize)
-            while chunk:
-                chunk = file_obj.read(chunksize)
-            self.assertEqual(
-                '[%s>] 100%%\n' % ('=' * 29),
-                output.getvalue()
-            )
-        finally:
-            sys.stdout = saved_stdout
+    @mock.patch(MOD + '.sys')
+    def test__display_progress_bar(self, mock_sys):
+        fake_file = StringIO('test')  # 4 bytes
+        fake_file.len = 4
+        pb = progressbar.VerboseFileWrapper(fake_file)
+        pb._display_progress_bar(2)  # 2 of 4 bytes = 50%
+        pb._display_progress_bar(1)  # 3 of 4 bytes = 75%
+        pb._display_progress_bar(1)  # 4 of 4 bytes = 100%
+        expected = [
+            mock.call('\r[===============>              ] 50%'),
+            mock.call('\r[======================>       ] 75%'),
+            mock.call('\r[=============================>] 100%'),
+        ]
+        self.assertEqual(expected, mock_sys.stdout.write.mock_calls)
 
-    def test_iter_file_no_tty(self):
-        size = 98304
-        file_obj = six.StringIO('X' * size)
-        saved_stdout = sys.stdout
-        try:
-            sys.stdout = output = test_utils.FakeNoTTYStdout()
-            file_obj = progressbar.VerboseFileWrapper(file_obj, size)
-            chunksize = 1024
-            chunk = file_obj.read(chunksize)
-            while chunk:
-                chunk = file_obj.read(chunksize)
-            # If stdout is not a tty progress bar should do nothing.
-            self.assertEqual('', output.getvalue())
-        finally:
-            sys.stdout = saved_stdout
+    @mock.patch(MOD + '.sys')
+    def test__display_progress_bar_unknown_len(self, mock_sys):
+        fake_file = StringIO('')
+        fake_file.len = 0
+        pb = progressbar.VerboseFileWrapper(fake_file)
+        for i in range(6):
+            pb._display_progress_bar(1)
+        expected = [
+            mock.call('\r[-] 1 bytes'),
+            mock.call('\r[\\] 2 bytes'),
+            mock.call('\r[|] 3 bytes'),
+            mock.call('\r[/] 4 bytes'),
+            mock.call('\r[-] 5 bytes'),
+            mock.call('\r[\\] 6 bytes'),
+        ]
+        self.assertEqual(expected, mock_sys.stdout.write.mock_calls)
+
+    @mock.patch(MOD + '._ProgressBarBase.__init__')
+    @mock.patch(MOD + '._ProgressBarBase._display_progress_bar')
+    def test_read(self, mock_display_progress_bar, mock_init):
+        mock_init.return_value = None
+        pb = progressbar.VerboseFileWrapper()
+        pb._wrapped = mock.Mock(len=42)
+        pb._wrapped.read.return_value = 'ok'
+        pb.read(2)
+        mock_display_progress_bar.assert_called_once_with(2)

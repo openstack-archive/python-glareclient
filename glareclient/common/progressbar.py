@@ -13,9 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import decimal
+import os
 import sys
 
-import six
+SPIN_CHARS = ('-', '\\', '|', '/')
+CHUNKSIZE = 1024 * 64  # 64kB
 
 
 class _ProgressBarBase(object):
@@ -30,21 +33,37 @@ class _ProgressBarBase(object):
     :note: The progress will be displayed only if sys.stdout is a tty.
     """
 
-    def __init__(self, wrapped, totalsize):
+    def __init__(self, wrapped):
         self._wrapped = wrapped
-        self._totalsize = float(totalsize)
         self._show_progress = sys.stdout.isatty()
         self._percent = 0
+        self._totalread = 0
+        self._spin_index = 0
+        if hasattr(wrapped, "len"):
+            self._totalsize = wrapped.len
+        elif hasattr(wrapped, "fileno"):
+            self._totalsize = os.fstat(wrapped.fileno()).st_size
+        else:
+            self._totalsize = 0
 
     def _display_progress_bar(self, size_read):
+        self._totalread += size_read
         if self._show_progress:
-            if self._totalsize == 0:
-                self._totalsize = size_read
-            self._percent += size_read / self._totalsize
-            # Output something like this: [==========>             ] 49%
-            sys.stdout.write('\r[{0:<30}] {1:.0%}'.format(
-                '=' * int(round(self._percent * 29)) + '>', self._percent
-            ))
+            if self._totalsize:
+                percent = float(self._totalread) / float(self._totalsize)
+                # Output something like this: [==========>             ] 49%
+                sys.stdout.write('\r[{0:<30}] {1:.0%}'.format(
+                    '=' * int(decimal.Decimal(percent * 29).quantize(
+                        decimal.Decimal('1'),
+                        rounding=decimal.ROUND_HALF_UP)) + '>', percent
+                ))
+            else:
+                sys.stdout.write(
+                    '\r[%s] %d bytes' % (SPIN_CHARS[self._spin_index],
+                                         self._totalread))
+                self._spin_index += 1
+                if self._spin_index == len(SPIN_CHARS):
+                    self._spin_index = 0
             sys.stdout.flush()
 
     def __getattr__(self, attr):
@@ -70,24 +89,12 @@ class VerboseFileWrapper(_ProgressBarBase):
                 sys.stdout.write('\n')
         return data
 
-
-class VerboseIteratorWrapper(_ProgressBarBase):
-    """An iterator wrapper with a progress bar.
-
-    The iterator wrapper shows and advances a progress bar whenever the
-    wrapped data is consumed from the iterator.
-
-    :note: Use only with iterator that yield strings.
-    """
-
     def __iter__(self):
         return self
 
     def next(self):
         try:
-            data = six.next(self._wrapped)
-            # NOTE(mouad): Assuming that data is a string b/c otherwise calling
-            # len function will not make any sense.
+            data = self._wrapped.next()
             self._display_progress_bar(len(data))
             return data
         except StopIteration:

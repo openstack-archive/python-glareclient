@@ -14,8 +14,6 @@
 #    under the License.
 
 
-import mock
-import six
 import testtools
 
 from glareclient.common import utils
@@ -30,36 +28,3 @@ class TestUtils(testtools.TestCase):
         self.assertEqual("1.4GB", utils.make_size_human_readable(1476395008))
         self.assertEqual("9.3MB", utils.make_size_human_readable(9761280))
         self.assertEqual("0B", utils.make_size_human_readable(None))
-
-    def test_get_new_file_size(self):
-        size = 98304
-        file_obj = six.StringIO('X' * size)
-        try:
-            self.assertEqual(size, utils.get_file_size(file_obj))
-            # Check that get_file_size didn't change original file position.
-            self.assertEqual(0, file_obj.tell())
-        finally:
-            file_obj.close()
-
-    def test_get_consumed_file_size(self):
-        size, consumed = 98304, 304
-        file_obj = six.StringIO('X' * size)
-        file_obj.seek(consumed)
-        try:
-            self.assertEqual(size, utils.get_file_size(file_obj))
-            # Check that get_file_size didn't change original file position.
-            self.assertEqual(consumed, file_obj.tell())
-        finally:
-            file_obj.close()
-
-    def test_iterable_closes(self):
-        # Regression test for bug 1461678.
-        def _iterate(i):
-            for chunk in i:
-                raise(IOError)
-
-        data = six.moves.StringIO('somestring')
-        data.close = mock.Mock()
-        i = utils.IterableWithLength(data, 10)
-        self.assertRaises(IOError, _iterate, i)
-        data.close.assert_called_with()

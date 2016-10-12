@@ -13,454 +13,194 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+from oslo_serialization import jsonutils
 import testtools
 
-from glareclient.exc import HTTPBadRequest
-from glareclient.tests.unit.v1 import fixtures
-from glareclient.tests import utils
 from glareclient.v1 import artifacts
 
 
 class TestController(testtools.TestCase):
+
     def setUp(self):
+        self.mock_resp = mock.MagicMock()
+        self.mock_body = mock.MagicMock()
+        self.mock_http_client = mock.MagicMock()
+        for method in ('get', 'post', 'patch', 'delete'):
+            method = getattr(self.mock_http_client, method)
+            method.return_value = (self.mock_resp, self.mock_body)
+        self.c = artifacts.Controller(self.mock_http_client, 'test_name')
+        self.c._check_type_name = mock.Mock(return_value='checked_name')
         super(TestController, self).setUp()
-        self.api = utils.FakeAPI(fixtures.data_fixtures)
-        self.controller = artifacts.Controller(self.api)
 
-    def test_list_artifacts(self):
-        artifacts = list(self.controller.list(type_name='images'))
-        self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
-                         artifacts[0]['id'])
-        self.assertEqual('art1', artifacts[0]['name'])
-        self.assertEqual('db721fb0-5b85-4738-9401-f161d541de5e',
-                         artifacts[1]['id'])
-        self.assertEqual('art2', artifacts[1]['name'])
-        self.assertEqual('e4f027d2-bff3-4084-a2ba-f31cb5e3067f',
-                         artifacts[2]['id'])
-        self.assertEqual('art3', artifacts[2]['name'])
+    def test_create(self):
+        body = self.c.create('name', version='0.1.2', type_name='ok')
+        self.assertEqual(self.mock_body, body)
+        self.mock_http_client.post.assert_called_once_with(
+            '/artifacts/checked_name',
+            json={'version': '0.1.2', 'name': 'name'})
+        self.c._check_type_name.assert_called_once_with('ok')
 
-        exp_headers = {}
-        expect_body = None
-        expect = [('GET', '/artifacts/images?limit=20',
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_list_with_paginate(self):
-        artifacts = list(self.controller.list(type_name='images',
-                                              page_size=2))
-        self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
-                         artifacts[0]['id'])
-        self.assertEqual('art1', artifacts[0]['name'])
-        self.assertEqual('art2', artifacts[1]['name'])
-        self.assertEqual('db721fb0-5b85-4738-9401-f161d541de5e',
-                         artifacts[1]['id'])
-        exp_headers = {}
-        expect_body = None
-        expect = [('GET', '/artifacts/images?limit=2',
-                   exp_headers,
-                   expect_body),
-                  ('GET', '/artifacts/images?limit=2'
-                          '&marker=e1090471-1d12-4935-a8d8-a9351266ece8',
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_list_artifacts_limit(self):
-        artifacts = list(self.controller.list(type_name='images',
-                                              limit=2))
-        self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
-                         artifacts[0]['id'])
-        self.assertEqual('art1', artifacts[0]['name'])
-        self.assertEqual('art2', artifacts[1]['name'])
-        self.assertEqual('db721fb0-5b85-4738-9401-f161d541de5e',
-                         artifacts[1]['id'])
-        exp_headers = {}
-        expect_body = None
-        expect = [('GET', '/artifacts/images?limit=2',
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_list_artifact_sort_name(self):
-
-        artifacts = list(self.controller.list(type_name='images',
-                                              sort='name:desc'))
-        self.assertEqual('e4f027d2-bff3-4084-a2ba-f31cb5e3067f',
-                         artifacts[0]['id'])
-        self.assertEqual('art2', artifacts[0]['name'])
-        self.assertEqual('art1', artifacts[1]['name'])
-        self.assertEqual('3a4560a1-e585-443e-9b39-553b46ec92d1',
-                         artifacts[1]['id'])
-        exp_headers = {}
-        expect_body = None
-        expect = [('GET', '/artifacts/images?limit=20'
-                          '&sort=name%3Adesc',
-                   exp_headers,
-                   expect_body),
-                  ('GET', '/artifacts/images?limit=20'
-                          '&marker=3a4560a1-e585-443e-9b39-553b46ec92d1',
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_list_artifact_sort_badrequest(self):
-        with testtools.ExpectedException(HTTPBadRequest):
-            list(self.controller.list(type_name='images',
-                                      sort='name:KAK'))
-
-    def test_create_artifact(self):
-        properties = {
-            'name': 'art_1',
-            'type_name': 'images'
+    def test_update(self):
+        remove_props = ['remove1', 'remove2']
+        body = self.c.update('test-id', type_name='test_name',
+                             remove_props=remove_props, update1=1, update2=2)
+        self.assertEqual(self.mock_body, body)
+        patch_kwargs = {
+            'headers': {'Content-Type': 'application/json-patch+json'},
+            'json': [
+                {'path': '/remove1', 'value': None, 'op': 'replace'},
+                {'path': '/remove2', 'value': None, 'op': 'replace'},
+                {'path': '/update2', 'value': 2, 'op': 'add'},
+                {'path': '/update1', 'value': 1, 'op': 'add'}
+            ]
         }
+        self.mock_http_client.patch.assert_called_once_with(
+            '/artifacts/checked_name/test-id', **patch_kwargs)
+        self.c._check_type_name.assert_called_once_with('test_name')
 
-        art = self.controller.create(**properties)
-        self.assertEqual('art_1', art['images'][0]['name'])
-        self.assertEqual('0.0.0', art['images'][0]['version'])
-        self.assertIsNotNone(art['images'][0]['id'])
-        exp_headers = {}
-        expect_body = [('name', 'art_1'), ('version', '0.0.0')]
-        expect = [('POST', '/artifacts/images',
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
+    def test_get(self):
+        body = self.c.get('test-id', type_name='test_name')
+        self.assertEqual(self.mock_body, body)
+        self.mock_http_client.get.assert_called_once_with(
+            '/artifacts/checked_name/test-id')
+        self.c._check_type_name.assert_called_once_with('test_name')
 
-    def test_create_artifact_bad_prop(self):
-        properties = {
-            'name': 'art_1',
-            'type_name': 'bad_type_name',
-        }
-        with testtools.ExpectedException(KeyError):
-            self.controller.create(**properties)
+    def test_list(self):
+        self.mock_http_client.get.side_effect = [
+            (None, {'checked_name': [10, 11, 12], "next": "next1"}),
+            (None, {'checked_name': [13, 14, 15], "next": "next2"}),
+            (None, {'checked_name': [16, 17, 18], "next": "next3"}),
+            (None, {'checked_name': [19, 20, 21]}),
+        ]
+        data = list(self.c.list(type_name='test-type', limit=10, page_size=3))
+        expected = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+        self.assertEqual(expected, data)
+        expected_calls = [
+            mock.call.get('/artifacts/checked_name?&limit=3'),
+            mock.call.get('next1'),
+            mock.call.get('next2'),
+            mock.call.get('next3'),
+        ]
+        self.assertEqual(expected_calls, self.mock_http_client.mock_calls)
 
-    def test_delete_artifact(self):
-        self.controller.delete(
-            artifact_id='3a4560a1-e585-443e-9b39-553b46ec92a3',
-            type_name='images')
+    def test_activate(self):
+        self.c.update = mock.Mock()
+        self.assertEqual(self.c.update.return_value,
+                         self.c.activate('test-id', type_name='test-type'))
+        self.c.update.assert_called_once_with('test-id', 'test-type',
+                                              status='active')
 
-        expect = [('DELETE', '/artifacts/images/'
-                             '3a4560a1-e585-443e-9b39-553b46ec92a3',
-                   {},
-                   None)]
-        self.assertEqual(expect, self.api.calls)
+    def test_deactivate(self):
+        self.c.update = mock.Mock()
+        self.assertEqual(self.c.update.return_value,
+                         self.c.deactivate('test-id', type_name='test-type'))
+        self.c.update.assert_called_once_with('test-id', 'test-type',
+                                              status='deactivated')
 
-    def test_update_prop(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        param = {'type_name': 'images',
-                 'name': 'new_name'}
+    def test_reactivate(self):
+        self.c.update = mock.Mock()
+        self.assertEqual(self.c.update.return_value,
+                         self.c.reactivate('test-id', type_name='test-type'))
+        self.c.update.assert_called_once_with('test-id', 'test-type',
+                                              status='active')
 
-        self.controller.update(artifact_id=art_id,
-                               **param)
-
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/name',
-                        'value': 'new_name',
-                        'op': 'add'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-
-    def test_remove_prop(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-
-        self.controller.update(artifact_id=art_id,
-                               remove_props=['name'],
-                               type_name='images')
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/name',
-                        'op': 'replace',
-                        'value': None}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-        self.api.calls = []
-
-        self.controller.update(artifact_id=art_id,
-                               remove_props=['metadata/key1'],
-                               type_name='images')
-
-        expect_body = [{'path': '/metadata/key1',
-                        'op': 'remove'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-        self.api.calls = []
-
-        self.controller.update(artifact_id=art_id,
-                               remove_props=['releases/1'],
-                               type_name='images')
-
-        expect_body = [{'path': '/releases/1',
-                        'op': 'remove'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-
-    def test_nontype_type_name(self):
-        with testtools.ExpectedException(HTTPBadRequest):
-            self.controller.create(name='art')
-
-    def test_active_artifact(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.activate(artifact_id=art_id,
-                                 type_name='images')
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/status',
-                        'value': 'active',
-                        'op': 'add'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-
-    def test_deactivate_artifact(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.deactivate(artifact_id=art_id,
-                                   type_name='images')
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/status',
-                        'value': 'deactivated',
-                        'op': 'add'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-
-    def test_reactivate_artifact(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.reactivate(artifact_id=art_id,
-                                   type_name='images')
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/status',
-                        'value': 'active',
-                        'op': 'add'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-
-        self.assertEqual(expect, self.api.calls)
-
-    def test_publish_artifact(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.publish(artifact_id=art_id,
-                                type_name='images')
-        exp_headers = {
-            'Content-Type': 'application/json-patch+json'
-        }
-
-        expect_body = [{'path': '/visibility',
-                        'value': 'public',
-                        'op': 'add'}]
-
-        expect = [('PATCH', '/artifacts/images/%s' % art_id,
-                   exp_headers,
-                   expect_body)]
-        self.assertEqual(expect, self.api.calls)
+    def test_delete(self):
+        self.assertEqual(None, self.c.delete('test-id', type_name='test-name'))
+        self.mock_http_client.delete.assert_called_once_with(
+            '/artifacts/checked_name/test-id')
 
     def test_upload_blob(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.upload_blob(artifact_id=art_id,
-                                    type_name='images',
-                                    blob_property='image',
-                                    data='data')
+        self.c.upload_blob('test-id', 'blob-prop', 'data',
+                           type_name='test-type',
+                           content_type='application/test')
+        self.mock_http_client.put.assert_called_once_with(
+            '/artifacts/checked_name/test-id/blob-prop',
+            data='data', headers={'Content-Type': 'application/test'})
 
-        exp_headers = {
-            'Content-Type': 'application/octet-stream'
-        }
+    def test_get_type_list(self):
+        schemas = {'schemas': {'a': {'version': 1}, 'b': {'version': 2}}}
+        self.mock_http_client.get.return_value = (None, schemas)
+        expected_types = [('a', 1), ('b', 2)]
+        self.assertEqual(expected_types, self.c.get_type_list())
 
-        expect = [('PUT', '/artifacts/images/%s/image' % art_id,
-                   exp_headers,
-                   'data')]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_upload_blob_custom_content_type(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.upload_blob(artifact_id=art_id,
-                                    type_name='images',
-                                    blob_property='image',
-                                    data='{"a":"b"}',
-                                    content_type='application/json',)
-
-        exp_headers = {
-            'Content-Type': 'application/json'
-        }
-
-        expect = [('PUT', '/artifacts/images/%s/image' % art_id,
-                   exp_headers,
-                   {"a": "b"})]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_download_blob(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        self.controller.download_blob(artifact_id=art_id,
-                                      type_name='images',
-                                      blob_property='image')
-
-        exp_headers = {}
-
-        expect = [('GET', '/artifacts/images/%s/image' % art_id,
-                   exp_headers,
-                   None)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_download_blob_with_checksum(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a2'
-        data = self.controller.download_blob(artifact_id=art_id,
-                                             type_name='images',
-                                             blob_property='image')
-        self.assertIsNotNone(data.iterable)
-
-        expect = [('GET', '/artifacts/images/%s/image' % art_id,
-                   {},
-                   None)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_download_blob_without_checksum(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a2'
-        data = self.controller.download_blob(artifact_id=art_id,
-                                             type_name='images',
-                                             blob_property='image',
-                                             do_checksum=False)
-        self.assertIsNotNone(data.iterable)
-
-        expect = [('GET', '/artifacts/images/%s/image' % art_id,
-                   {},
-                   None)]
-        self.assertEqual(expect, self.api.calls)
-
-    def test_get_artifact(self):
-        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a3'
-        art = self.controller.get(artifact_id=art_id,
-                                  type_name='images')
-        self.assertEqual(art_id, art['images'][0]['id'])
-        self.assertEqual('art_1', art['images'][0]['name'])
-
-    def test_get_by_name(self):
-        art_name = 'name1'
-        art = self.controller.get_by_name(name=art_name,
-                                          type_name='images')
-        self.assertEqual(art_name, art['name'])
-        self.assertEqual('3.0.0', art['version'])
-
-    def test_get_by_name_with_version(self):
-        art_name = 'name1'
-        art = self.controller.get_by_name(name=art_name,
-                                          version='1.0.0',
-                                          type_name='images')
-        self.assertEqual(art_name, art['name'])
-        self.assertEqual('1.0.0', art['version'])
-
-    def test_type_list(self):
-        data = self.controller.get_type_list()
-        expect_data = [('images', '1.0'), ('heat_environments', '1.0')]
-        expect_call = [('GET', '/schemas', {}, None)]
-        self.assertEqual(expect_call, self.api.calls)
-        self.assertEqual(expect_data, data)
-
-    def test_get_schema(self):
-        data = self.controller.get_type_schema(type_name='images')
-        expect_data = {'name': 'images', 'version': '1.0',
-                       'properties': {'foo': 'bar'}}
-        expect_call = [('GET', '/schemas/images', {}, None)]
-        self.assertEqual(expect_call, self.api.calls)
-        self.assertEqual(expect_data, data)
+    def test_get_type_schema(self):
+        test_schema = {'schemas': {'checked_name': 'test-schema'}}
+        self.mock_http_client.get.return_value = (None, test_schema)
+        self.assertEqual('test-schema',
+                         self.c.get_type_schema(type_name='test-type'))
+        self.mock_http_client.get.assert_called_once_with(
+            '/schemas/checked_name')
 
     def test_add_external_location(self):
         art_id = '3a4560a1-e585-443e-9b39-553b46ec92a8'
-        data = self.controller.add_external_location(art_id,
-                                                     'image',
-                                                     'http://fake_url',
-                                                     type_name='images')
-        expect_call = [
-            ('PUT',
-             '/artifacts/images/3a4560a1-e585-443e-9b39-553b46ec92a8/image',
-             {'Content-Type': 'application/vnd+openstack.'
-                              'glare-custom-location+json'},
-             'http://fake_url')]
-        self.assertEqual(expect_call, self.api.calls)
-        self.assertIsNone(data)
+        data = {
+            'url': 'http://fake_url',
+            'md5': '7CA772EE98D5CAF99F3674085D5E4124',
+            'sha1': None,
+            'sha256': None},
+        resp = self.c.add_external_location(
+            art_id, 'image',
+            data=data,
+            type_name='images')
+        self.c.http_client.put.assert_called_once_with(
+            '/artifacts/checked_name/'
+            '3a4560a1-e585-443e-9b39-553b46ec92a8/image',
+            data=jsonutils.dumps(data),
+            headers={'Content-Type':
+                     'application/vnd+openstack.glare-custom-location+json'})
+        self.assertIsNone(resp)
 
     def test_add_tag(self):
         art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
-        data = self.controller.add_tag(
+        d = {'tags': ['a', 'b', 'c']}
+        self.mock_body.__getitem__.side_effect = d.__getitem__
+        data = self.c.add_tag(
             art_id, tag_value="123", type_name='images')
-        expect_call = [
-            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {}, None),
-            ('PATCH',
-             '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {'Content-Type': 'application/json-patch+json'},
-             [{'op': 'add',
-               'path': '/tags',
-               'value': ['a', 'b', 'c', '123']}])]
-        self.assertEqual(expect_call, self.api.calls)
+        self.c.http_client.get.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c')
+        self.c.http_client.patch.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+            headers={'Content-Type': 'application/json-patch+json'},
+            json=[{'path': '/tags',
+                   'value': ['a', 'b', 'c', '123'],
+                   'op': 'add'}])
         self.assertIsNotNone(data)
 
     def test_add_existing_tag(self):
         art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
-        data = self.controller.add_tag(
+        d = {'tags': ['a', 'b', 'c']}
+        self.mock_body.__getitem__.side_effect = d.__getitem__
+        data = self.c.add_tag(
             art_id, tag_value="a", type_name='images')
-        expect_call = [
-            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {}, None)]
-        self.assertEqual(expect_call, self.api.calls)
+        self.c.http_client.get.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c')
+        self.assertEqual(0, self.c.http_client.patch.call_count)
         self.assertIsNotNone(data)
 
     def test_remove_tag(self):
         art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
-        data = self.controller.remove_tag(
+        d = {'tags': ['a', 'b', 'c']}
+        self.mock_body.__getitem__.side_effect = d.__getitem__
+        data = self.c.remove_tag(
             art_id, tag_value="a", type_name='images')
-        expect_call = [
-            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {}, None),
-            ('PATCH',
-             '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {'Content-Type': 'application/json-patch+json'},
-             [{'op': 'add',
-               'path': '/tags',
-               'value': ['b', 'c']}])]
-        self.assertEqual(expect_call, self.api.calls)
+        self.c.http_client.get.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c')
+        self.c.http_client.patch.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+            headers={'Content-Type': 'application/json-patch+json'},
+            json=[{'path': '/tags',
+                   'value': ['b', 'c'],
+                   'op': 'add'}])
         self.assertIsNotNone(data)
 
     def test_remove_nonexisting_tag(self):
         art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
-        data = self.controller.remove_tag(
+        d = {'tags': ['a', 'b', 'c']}
+        self.mock_body.__getitem__.side_effect = d.__getitem__
+        data = self.c.remove_tag(
             art_id, tag_value="123", type_name='images')
-        expect_call = [
-            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
-             {}, None)]
-        self.assertEqual(expect_call, self.api.calls)
+        self.c.http_client.get.assert_called_once_with(
+            '/artifacts/checked_name/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c')
+        self.assertEqual(0, self.c.http_client.patch.call_count)
         self.assertIsNotNone(data)

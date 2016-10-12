@@ -14,10 +14,106 @@
 
 import mock
 
+from glareclient import exc
 from glareclient.osc.v1 import blobs as osc_blob
 from glareclient.tests.unit.osc.v1 import fakes
 from glareclient.v1 import artifacts as api_art
 import testtools
+
+
+class TestUpload(testtools.TestCase):
+
+    def setUp(self):
+        self.mock_app = mock.Mock()
+        self.mock_args = mock.Mock()
+        self.mock_manager = mock.Mock()
+        self.mock_manager.artifacts.get.return_value = {'image': {}}
+        super(TestUpload, self).setUp()
+
+    @mock.patch('glareclient.osc.v1.blobs.progressbar')
+    @mock.patch('glareclient.osc.v1.blobs.sys')
+    @mock.patch('glareclient.osc.v1.blobs.open', create=True)
+    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    def test_upload_file_progress(self, mock_get_id,
+                                  mock_open, mock_sys, mock_progressbar):
+        mock_parsed_args = mock.Mock(name='test-id',
+                                     id=True,
+                                     blob_property='image',
+                                     file='/path/file',
+                                     progress=True,
+                                     content_type='application/test',
+                                     type_name='test-type')
+        mock_get_id.return_value = 'test-id'
+        cli = osc_blob.UploadBlob(self.mock_app, self.mock_args)
+        cli.app.client_manager.artifact = self.mock_manager
+        cli.dict2columns = mock.Mock(return_value=42)
+        self.assertEqual(42, cli.take_action(mock_parsed_args))
+        cli.dict2columns.assert_called_once_with({'blob_property': 'image'})
+        upload_args = ['test-id', 'image',
+                       mock_progressbar.VerboseFileWrapper.return_value]
+        upload_kwargs = {'content_type': 'application/test',
+                         'type_name': 'test-type'}
+        self.mock_manager.artifacts.upload_blob.\
+            assert_called_once_with(*upload_args, **upload_kwargs)
+
+    @mock.patch('glareclient.osc.v1.blobs.sys')
+    @mock.patch('glareclient.osc.v1.blobs.open', create=True)
+    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    def test_upload_file_no_progress(self, mock_get_id, mock_open, mock_sys):
+        mock_parsed_args = mock.Mock(name='test-id',
+                                     id=True,
+                                     blob_property='image',
+                                     progress=False,
+                                     file='/path/file',
+                                     content_type='application/test',
+                                     type_name='test-type')
+        mock_get_id.return_value = 'test-id'
+        cli = osc_blob.UploadBlob(self.mock_app, self.mock_args)
+        cli.app.client_manager.artifact = self.mock_manager
+        cli.dict2columns = mock.Mock(return_value=42)
+        self.assertEqual(42, cli.take_action(mock_parsed_args))
+        cli.dict2columns.assert_called_once_with({'blob_property': 'image'})
+        upload_args = ['test-id', 'image', mock_open.return_value]
+        upload_kwargs = {'content_type': 'application/test',
+                         'type_name': 'test-type'}
+        self.mock_manager.artifacts.upload_blob.\
+            assert_called_once_with(*upload_args, **upload_kwargs)
+
+    @mock.patch('glareclient.osc.v1.blobs.sys')
+    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    def test_upload_file_stdin(self, mock_get_id, mock_sys):
+        mock_sys.stdin.isatty.return_value = False
+        mock_parsed_args = mock.Mock(name='test-id',
+                                     id=True,
+                                     blob_property='image',
+                                     progress=False,
+                                     file=None,
+                                     content_type='application/test',
+                                     type_name='test-type')
+        mock_get_id.return_value = 'test-id'
+        cli = osc_blob.UploadBlob(self.mock_app, self.mock_args)
+        cli.app.client_manager.artifact = self.mock_manager
+        cli.dict2columns = mock.Mock(return_value=42)
+        self.assertEqual(42, cli.take_action(mock_parsed_args))
+        cli.dict2columns.assert_called_once_with({'blob_property': 'image'})
+        upload_args = ['test-id', 'image', mock_sys.stdin]
+        upload_kwargs = {'content_type': 'application/test',
+                         'type_name': 'test-type'}
+        self.mock_manager.artifacts.upload_blob.\
+            assert_called_once_with(*upload_args, **upload_kwargs)
+
+    @mock.patch('glareclient.osc.v1.blobs.sys')
+    def test_upload_file_stdin_isatty(self, mock_sys):
+        mock_sys.stdin.isatty.return_value = True
+        mock_parsed_args = mock.Mock(id='test-id',
+                                     blob_property='image',
+                                     progress=False,
+                                     file=None,
+                                     content_type='application/test',
+                                     type_name='test-type')
+        cli = osc_blob.UploadBlob(self.mock_app, self.mock_args)
+        cli.app.client_manager.artifact = self.mock_manager
+        self.assertRaises(exc.CommandError, cli.take_action, mock_parsed_args)
 
 
 class TestBlobs(fakes.TestArtifacts):
@@ -26,187 +122,6 @@ class TestBlobs(fakes.TestArtifacts):
         self.blob_mock = \
             self.app.client_manager.artifact.blobs
         self.http = mock.MagicMock()
-
-
-class TestUploadBlob(TestBlobs):
-    def setUp(self):
-        super(TestUploadBlob, self).setUp()
-        self.blob_mock.call.return_value = \
-            api_art.Controller(self.http, type_name='images')
-
-        # Command to test
-        self.cmd = osc_blob.UploadBlob(self.app, None)
-
-        self.COLUMNS = ('blob_property', 'content_type', 'external',
-                        'md5', 'sha1', 'sha256', 'size', 'status', 'url')
-
-    def test_upload_images(self):
-        exp_data = ('image', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'images')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_tosca_template(self):
-        exp_data = ('template', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['tosca_templates',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'tosca_templates')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_heat_template(self):
-        exp_data = ('template', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['heat_templates',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'heat_templates')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_environment(self):
-        exp_data = ('environment', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['heat_environments',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'heat_environments')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_package(self):
-        exp_data = ('package', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['murano_packages',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'murano_packages')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_bad(self):
-        arglist = ['user_type',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file']
-        verify = [('type_name', 'user_type')]
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        with testtools.ExpectedException(SystemExit):
-            self.cmd.take_action(parsed_args)
-
-    def test_upload_with_custom_content_type(self):
-        exp_data = ('template', 'application/x-yaml', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-
-        mocked_get = {
-            "status": "active",
-            "url": "fake_url",
-            "md5": "35d83e8eedfbdb87ff97d1f2761f8ebf",
-            "sha1": "942854360eeec1335537702399c5aed940401602",
-            "sha256": "d8a7834fc6652f316322d80196f6dcf2"
-                      "94417030e37c15412e4deb7a67a367dd",
-            "external": False,
-            "content_type": "application/x-yaml",
-            "size": 594}
-        self.app.client_manager.artifact.artifacts.get = \
-            lambda id, type_name: {'template': mocked_get}
-
-        arglist = ['tosca_templates',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file',
-                   '--content-type', 'application/x-yaml']
-        verify = [('type_name', 'tosca_templates')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_blob_with_blob_prop(self):
-        exp_data = ('blob', 'application/octet-stream', False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file',
-                   '--blob-property', 'blob']
-        verify = [('type_name', 'images')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        columns, data = self.cmd.take_action(parsed_args)
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
-
-    def test_upload_blob_dict(self):
-        exp_data = ('nested_templates/blob', 'application/octet-stream',
-                    False,
-                    '35d83e8eedfbdb87ff97d1f2761f8ebf',
-                    '942854360eeec1335537702399c5aed940401602',
-                    'd8a7834fc6652f316322d80196f6dcf2'
-                    '94417030e37c15412e4deb7a67a367dd',
-                    594, 'active', 'fake_url')
-        arglist = ['images',
-                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
-                   '--file', '/path/to/file',
-                   '--blob-property', 'nested_templates/blob']
-        verify = [('type_name', 'images')]
-
-        parsed_args = self.check_parser(self.cmd, arglist, verify)
-        self.app.client_manager.artifact.artifacts.get = \
-            lambda *args, **kwargs: {
-                'nested_templates': {'blob': fakes.blob_fixture}
-            }
-        columns, data = self.cmd.take_action(parsed_args)
-        self.app.client_manager.artifact.artifacts.get = fakes.mock_get
-        self.assertEqual(self.COLUMNS, columns)
-        self.assertEqual(exp_data, data)
 
 
 class TestDownloadBlob(TestBlobs):

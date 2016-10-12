@@ -19,6 +19,7 @@ from osc_lib.command import command
 
 from glareclient.common import progressbar
 from glareclient.common import utils
+from glareclient import exc
 from glareclient.osc.v1 import TypeMapperAction
 
 LOG = logging.getLogger(__name__)
@@ -107,11 +108,15 @@ class UploadBlob(command.ShowOne):
             parsed_args.blob_property = _default_blob_property(
                 parsed_args.type_name)
 
-        blob = utils.get_data_file(parsed_args.file)
+        if parsed_args.file is None:
+            if sys.stdin.isatty():
+                raise exc.CommandError('Blob file should be specified or '
+                                       'explicitly connected to stdin')
+            blob = sys.stdin
+        else:
+            blob = open(parsed_args.file, 'rb')
         if parsed_args.progress:
-            file_size = utils.get_file_size(blob)
-            if file_size is not None:
-                blob = progressbar.VerboseFileWrapper(blob, file_size)
+            blob = progressbar.VerboseFileWrapper(blob)
 
         client.artifacts.upload_blob(af_id, parsed_args.blob_property, blob,
                                      content_type=parsed_args.content_type,
@@ -186,7 +191,7 @@ class DownloadBlob(command.Command):
                                               parsed_args.blob_property,
                                               type_name=parsed_args.type_name)
         if parsed_args.progress:
-            data = progressbar.VerboseIteratorWrapper(data, len(data))
+            data = progressbar.VerboseFileWrapper(data)
         if not (sys.stdout.isatty() and parsed_args.file is None):
             utils.save_blob(data, parsed_args.file)
         else:

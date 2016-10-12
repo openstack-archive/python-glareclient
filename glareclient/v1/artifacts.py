@@ -12,11 +12,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from glareclient.common import utils
-from glareclient import exc
+from oslo_serialization import jsonutils
 from oslo_utils import encodeutils
 import six
 from six.moves.urllib import parse
+
+from glareclient.common import utils
+from glareclient import exc
 
 
 class Controller(object):
@@ -59,7 +61,7 @@ class Controller(object):
         type_name = self._check_type_name(type_name)
         kwargs.update({'name': name, 'version': version})
         url = '/artifacts/%s' % type_name
-        resp, body = self.http_client.post(url, data=kwargs)
+        resp, body = self.http_client.post(url, json=kwargs)
         return body
 
     def update(self, artifact_id, type_name=None, remove_props=None,
@@ -90,7 +92,7 @@ class Controller(object):
         for prop_name in kwargs:
             changes.append({'op': 'add', 'path': '/%s' % prop_name,
                             'value': kwargs[prop_name]})
-        resp, body = self.http_client.patch(url, headers=hdrs, data=changes)
+        resp, body = self.http_client.patch(url, headers=hdrs, json=changes)
         return body
 
     def get(self, artifact_id, type_name=None):
@@ -226,7 +228,7 @@ class Controller(object):
         type_name = self._check_type_name(type_name)
         hdrs = {'Content-Type': content_type}
         url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
-        self.http_client.put(url, headers=hdrs, data=data, stream=True)
+        self.http_client.put(url, headers=hdrs, data=data)
 
     def add_external_location(self, artifact_id, blob_property, data,
                               type_name=None):
@@ -240,6 +242,10 @@ class Controller(object):
         type_name = self._check_type_name(type_name)
         hdrs = {'Content-Type': content_type}
         url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
+        try:
+            data = jsonutils.dumps(data)
+        except TypeError:
+            raise exc.HTTPBadRequest("json is malformed.")
         self.http_client.put(url, headers=hdrs, data=data)
 
     def download_blob(self, artifact_id, blob_property, type_name=None,
@@ -252,12 +258,10 @@ class Controller(object):
         """
         type_name = self._check_type_name(type_name)
         url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
-        resp, body = self.http_client.get(url)
-        checksum = resp.headers.get('content-md5', None)
-        content_length = int(resp.headers.get('content-length', 0))
-        if checksum is not None and do_checksum:
-            body = utils.integrity_iter(body, checksum)
-        return utils.IterableWithLength(body, content_length)
+        resp, body = self.http_client.get(url, redirect=False,
+                                          stream=True,
+                                          headers={"Accept": "*/*"})
+        return utils.ResponseBlobWrapper(resp, do_checksum)
 
     def get_type_list(self):
         """Get list of type names."""

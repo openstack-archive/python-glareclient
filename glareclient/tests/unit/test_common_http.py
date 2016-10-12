@@ -119,10 +119,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_json_request_argument_passed_to_requests(self, mock_request):
         """Check that we have sent the proper arguments to requests."""
@@ -148,9 +145,7 @@ class HttpClientTest(testtools.TestCase):
             cert=('RANDOM_CERT_FILE', 'RANDOM_KEY_FILE'),
             verify=True,
             data='text',
-            stream=False,
-            headers={'Content-Type': 'application/json',
-                     'X-Auth-Url': 'http://AUTH_URL',
+            headers={'X-Auth-Url': 'http://AUTH_URL',
                      'User-Agent': 'python-glareclient'})
 
     def test_http_json_request_w_req_body(self, mock_request):
@@ -169,9 +164,7 @@ class HttpClientTest(testtools.TestCase):
             'GET', 'http://example.com:9494',
             data='test-body',
             allow_redirects=False,
-            stream=False,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_json_request_non_json_resp_cont_type(self, mock_request):
         # Record a 200
@@ -187,9 +180,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494', data='test-data',
             allow_redirects=False,
-            stream=False,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_json_request_invalid_json(self, mock_request):
         # Record a 200
@@ -206,10 +197,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_manual_redirect_delete(self, mock_request):
         mock_request.side_effect = [
@@ -229,16 +217,10 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_has_calls([
             mock.call('DELETE', 'http://example.com:9494/foo',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'}),
+                      headers={'User-Agent': 'python-glareclient'}),
             mock.call('DELETE', 'http://example.com:9494/foo/bar',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'})
+                      headers={'User-Agent': 'python-glareclient'})
         ])
 
     def test_http_manual_redirect_post(self, mock_request):
@@ -253,22 +235,18 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494/foo')
-        resp, body = client.json_request('', 'POST')
+        resp, body = client.json_request('', 'POST', json={})
 
         self.assertEqual(200, resp.status_code)
         mock_request.assert_has_calls([
             mock.call('POST', 'http://example.com:9494/foo',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'}),
+                      headers={'User-Agent': 'python-glareclient'},
+                      json={}),
             mock.call('POST', 'http://example.com:9494/foo/bar',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'})
+                      headers={'User-Agent': 'python-glareclient'},
+                      json={})
         ])
 
     def test_http_manual_redirect_put(self, mock_request):
@@ -283,22 +261,18 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494/foo')
-        resp, body = client.json_request('', 'PUT')
+        resp, body = client.json_request('', 'PUT', json={})
 
         self.assertEqual(200, resp.status_code)
         mock_request.assert_has_calls([
             mock.call('PUT', 'http://example.com:9494/foo',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'}),
+                      headers={'User-Agent': 'python-glareclient'},
+                      json={}),
             mock.call('PUT', 'http://example.com:9494/foo/bar',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'})
+                      headers={'User-Agent': 'python-glareclient'},
+                      json={})
         ])
 
     def test_http_manual_redirect_prohibited(self, mock_request):
@@ -313,10 +287,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'DELETE', 'http://example.com:9494/foo',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_manual_redirect_error_without_location(self, mock_request):
         mock_request.return_value = \
@@ -330,10 +301,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'DELETE', 'http://example.com:9494/foo',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_json_request_redirect(self, mock_request):
         # Record the 302
@@ -344,7 +312,7 @@ class HttpClientTest(testtools.TestCase):
                 ''),
             fakes.FakeHTTPResponse(
                 200, 'OK',
-                {'content-type': 'application/json'},
+                {},
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494')
@@ -355,16 +323,10 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_has_calls([
             mock.call('GET', 'http://example.com:9494',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'}),
+                      headers={'User-Agent': 'python-glareclient'}),
             mock.call('GET', 'http://example.com:9494',
                       allow_redirects=False,
-                      stream=False,
-                      data=None,
-                      headers={'Content-Type': 'application/json',
-                               'User-Agent': 'python-glareclient'})
+                      headers={'User-Agent': 'python-glareclient'})
         ])
 
     def test_http_404_json_request(self, mock_request):
@@ -381,10 +343,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_http_300_json_request(self, mock_request):
         mock_request.return_value = \
@@ -401,10 +360,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'})
+            headers={'User-Agent': 'python-glareclient'})
 
     def test_fake_json_request(self, mock_request):
         headers = {'User-Agent': 'python-glareclient'}
@@ -453,10 +409,7 @@ class HttpClientTest(testtools.TestCase):
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494',
             allow_redirects=False,
-            stream=False,
-            data=None,
-            headers={'Content-Type': 'application/json',
-                     'User-Agent': 'python-glareclient'},
+            headers={'User-Agent': 'python-glareclient'},
             timeout=float(123))
 
     def test_get_system_ca_file(self, mock_request):
