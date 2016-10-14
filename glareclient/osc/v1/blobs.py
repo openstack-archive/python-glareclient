@@ -58,7 +58,7 @@ class UploadBlob(command.ShowOne):
             help='Local file that contains data to be uploaded.',
         )
         parser.add_argument(
-            '--blob-property',
+            '--blob-property', '-p',
             metavar='<BLOB_PROPERTY>',
             help='Name of the blob field.'
         )
@@ -70,6 +70,7 @@ class UploadBlob(command.ShowOne):
         )
         parser.add_argument(
             '--progress',
+            action='store_true',
             help='Show download progress bar.'
         )
         return parser
@@ -119,7 +120,7 @@ class DownloadBlob(command.Command):
         )
         parser.add_argument(
             '--progress',
-            default=False,
+            action='store_true',
             help='Show download progress bar.'
         )
         parser.add_argument(
@@ -130,7 +131,7 @@ class DownloadBlob(command.Command):
                  'the blob will not be saved.'
         )
         parser.add_argument(
-            '--blob-property',
+            '--blob-property', '-p',
             metavar='<BLOB_PROPERTY>',
             default=None,
             help='Name of the blob field.'

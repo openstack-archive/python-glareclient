@@ -54,26 +54,28 @@ class ListArtifacts(command.Lister):
             help='Name of artifact type.',
         )
         parser.add_argument(
-            '--limit',
+            '--limit', '-l',
             default=20,
             metavar='<LIMIT>',
+            type=int,
             help='Maximum number of artifacts to get.',
         )
         parser.add_argument(
-            '--page-size',
+            '--page-size', '-p',
             default=20,
             metavar='<SIZE>',
+            type=int,
             help='Number of artifacts to request in each paginated request.',
         )
         parser.add_argument(
-            '--filter',
+            '--filter', '-F',
             default=[],
             action='append',
             metavar='<KEY=VALUE>',
             help='Filtering artifact list by a user-defined property.',
         )
         parser.add_argument(
-            '--sort',
+            '--sort', '-s',
             default='name:asc',
             metavar='<key>[:<direction>]',
             help='Comma-separated list of sort keys and directions in the '
@@ -149,13 +151,13 @@ class CreateArtifact(command.Lister):
             help='Name of the artifact.',
         ),
         parser.add_argument(
-            '--artifact-version',
+            '--artifact-version', '-v',
             default='0.0.0',
             metavar='<VERSION>',
             help='Version of the artifact.',
         )
         parser.add_argument(
-            '--property',
+            '--property', '-p',
             metavar='<key=value>',
             action='append',
             default=[],
@@ -196,19 +198,19 @@ class UpdateArtifact(command.Lister):
             help='ID of the artifact to update.',
         )
         parser.add_argument(
-            '--name',
+            '--name', '-n',
             metavar='<NAME>',
             help='Name of the artifact.',
         ),
         parser.add_argument(
-            '--remove-property',
+            '--remove-property', '-r',
             metavar='<key>',
             action='append',
             default=[],
             help='Property that will be removed.'
         )
         parser.add_argument(
-            '--property',
+            '--property', '-p',
             metavar='<key=value>',
             action='append',
             default=[],
