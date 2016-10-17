@@ -135,7 +135,7 @@ class ShowArtifact(command.Lister):
             help='Name or id of the artifact to show.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -143,7 +143,7 @@ class ShowArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
@@ -171,12 +171,11 @@ class CreateArtifact(command.Lister):
         ),
         parser.add_argument(
             'name',
-            default='',
             metavar='<NAME>',
             help='Name of the artifact.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             default='0.0.0',
             metavar='<VERSION>',
             help='Version of the artifact.',
@@ -218,17 +217,12 @@ class UpdateArtifact(command.Lister):
             help='Name of artifact type.',
         ),
         parser.add_argument(
-            'id',
-            metavar='<ID>',
-            help='ID of the artifact to update.',
-        )
-        parser.add_argument(
-            '--name', '-n',
+            'name',
             metavar='<NAME>',
             help='Name or id of the artifact to update.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -236,7 +230,7 @@ class UpdateArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         parser.add_argument(
             '--remove-property', '-r',
@@ -288,7 +282,7 @@ class DeleteArtifact(command.Command):
             help='Name or id of the artifact to delete.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -296,7 +290,7 @@ class DeleteArtifact(command.Command):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
@@ -325,7 +319,7 @@ class ActivateArtifact(command.Lister):
             help='Name or id of the artifact to activate.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -333,7 +327,7 @@ class ActivateArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
@@ -363,7 +357,7 @@ class DeactivateArtifact(command.Lister):
             help='Name or id of the artifact to deactivate.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -371,7 +365,7 @@ class DeactivateArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
@@ -401,7 +395,7 @@ class ReactivateArtifact(command.Lister):
             help='Name or id of the artifact to reactivate.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -409,7 +403,7 @@ class ReactivateArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
@@ -439,7 +433,7 @@ class PublishArtifact(command.Lister):
             help='Name or id of the artifact to publish.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -447,7 +441,7 @@ class PublishArtifact(command.Lister):
         parser.add_argument(
             '--id', '-i',
             action='store_true',
-            help='The specified id of the artifact.',
+            help='Flag indicates to use artifact id instead of its name.',
         ),
         return parser
 
