@@ -192,6 +192,42 @@ class TestCreateArtifacts(TestArtifacts):
         # Check that columns are correct
         self.assertEqual(self.COLUMNS, name_fields)
 
+    def test_create_artifact_list_prop(self):
+        arglist = ['images', 'art',
+                   '--artifact-version', '0.2.4',
+                   '--list', 'l=10,11,12']
+        verify = [('type_name', 'images'),
+                  ('list', ['l=10,11,12']),
+                  ('artifact_version', '0.2.4')]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        with mock.patch.object(
+                self.app.client_manager.artifact.artifacts,
+                'create') as patched_create:
+            self.cmd.take_action(parsed_args)
+            patched_create.assert_called_once_with(
+                'art',
+                l=['10', '11', '12'],
+                type_name='images',
+                version='0.2.4')
+
+    def test_create_artifact_dict_prop(self):
+        arglist = ['images', 'art',
+                   '--artifact-version', '0.2.4',
+                   '--dict', 'd=a:10,b:11,c:12']
+        verify = [('type_name', 'images'),
+                  ('dict', ['d=a:10,b:11,c:12']),
+                  ('artifact_version', '0.2.4')]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        with mock.patch.object(
+                self.app.client_manager.artifact.artifacts,
+                'create') as patched_create:
+            self.cmd.take_action(parsed_args)
+            patched_create.assert_called_once_with(
+                'art',
+                d={'a': '10', 'c': '12', 'b': '11'},
+                type_name='images',
+                version='0.2.4')
+
     def test_create_artifact_multiproperty(self):
         arglist = ['images', 'art',
                    '--artifact-version', '0.2.4',
@@ -234,6 +270,40 @@ class TestUpdateArtifacts(TestArtifacts):
         name_fields = set([column[0] for column in data])
         # Check that columns are correct
         self.assertEqual(self.COLUMNS, name_fields)
+
+    def test_update_artifact_list_prop(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   '--list', 'l=10,11,12']
+        verify = [('type_name', 'images'),
+                  ('list', ['l=10,11,12'])]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        with mock.patch.object(
+                self.app.client_manager.artifact.artifacts,
+                'update') as patched_update:
+            self.cmd.take_action(parsed_args)
+            patched_update.assert_called_once_with(
+                'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                l=['10', '11', '12'],
+                remove_props=[],
+                type_name='images')
+
+    def test_update_artifact_dict_prop(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                   '--dict', 'd=a:10,b:11,c:12']
+        verify = [('type_name', 'images'),
+                  ('dict', ['d=a:10,b:11,c:12'])]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        with mock.patch.object(
+                self.app.client_manager.artifact.artifacts,
+                'update') as patched_update:
+            self.cmd.take_action(parsed_args)
+            patched_update.assert_called_once_with(
+                'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba',
+                d={'a': '10', 'c': '12', 'b': '11'},
+                remove_props=[],
+                type_name='images')
 
     def test_artifact_update_bad(self):
         arglist = ['images',
