@@ -15,12 +15,12 @@
 import logging
 
 from osc_lib.command import command
+from oslo_utils import strutils
+from pprint import pformat
+import six
 
 from glareclient.common import utils as glare_utils
 from glareclient.osc.v1 import TypeMapperAction
-
-from pprint import pformat
-import six
 
 LOG = logging.getLogger(__name__)
 
@@ -185,7 +185,21 @@ class CreateArtifact(command.Lister):
             metavar='<key=value>',
             action='append',
             default=[],
-            help='Artifact property.'
+            help='Simple artifact property.'
+        )
+        parser.add_argument(
+            '--list', '-l',
+            metavar='<key=value>',
+            action='append',
+            default=[],
+            help='Artifact list property.'
+        )
+        parser.add_argument(
+            '--dict', '-d',
+            metavar='<key=value>',
+            action='append',
+            default=[],
+            help='Artifact dict property.'
         )
         return parser
 
@@ -196,6 +210,19 @@ class CreateArtifact(command.Lister):
         for datum in parsed_args.property:
             key, value = datum.split('=', 1)
             prop[key] = value
+
+        for datum in parsed_args.list:
+            key, value = datum.split('=', 1)
+            value = strutils.split_by_commas(value)
+            prop[key] = value
+
+        for datum in parsed_args.dict:
+            key, value = datum.split('=', 1)
+            value = strutils.split_by_commas(value)
+            prop[key] = {}
+            for elem in value:
+                k, v = elem.split(':', 1)
+                prop[key][k] = v
 
         client = self.app.client_manager.artifact
         data = client.artifacts.create(parsed_args.name,
@@ -244,7 +271,21 @@ class UpdateArtifact(command.Lister):
             metavar='<key=value>',
             action='append',
             default=[],
-            help='Update property values.'
+            help='Simple artifact property.'
+        )
+        parser.add_argument(
+            '--list', '-l',
+            metavar='<key=value>',
+            action='append',
+            default=[],
+            help='Artifact list property.'
+        )
+        parser.add_argument(
+            '--dict', '-d',
+            metavar='<key=value>',
+            action='append',
+            default=[],
+            help='Artifact dict property.'
         )
         return parser
 
@@ -255,6 +296,19 @@ class UpdateArtifact(command.Lister):
         for datum in parsed_args.property:
             key, value = datum.split('=', 1)
             prop[key] = value
+
+        for datum in parsed_args.list:
+            key, value = datum.split('=', 1)
+            value = strutils.split_by_commas(value)
+            prop[key] = value
+
+        for datum in parsed_args.dict:
+            key, value = datum.split('=', 1)
+            value = strutils.split_by_commas(value)
+            prop[key] = {}
+            for elem in value:
+                k, v = elem.split(':', 1)
+                prop[key][k] = v
 
         client = self.app.client_manager.artifact
         af_id = get_artifact_id(client, parsed_args)
