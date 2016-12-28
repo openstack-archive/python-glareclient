@@ -65,7 +65,7 @@ class UploadBlob(command.ShowOne):
             help='Name or id of the artifact to upload.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -86,7 +86,7 @@ class UploadBlob(command.ShowOne):
             help='Name of the blob field.'
         )
         parser.add_argument(
-            '--content-type',
+            '--content-type', '-C',
             metavar='<CONTENT_TYPE>',
             default='application/octet-stream',
             help='Content-type of the blob.'
@@ -141,7 +141,7 @@ class DownloadBlob(command.Command):
             help='Name or id of the artifact to download.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -209,7 +209,7 @@ class AddLocation(command.ShowOne):
             help='Name or id of the artifact to download.',
         ),
         parser.add_argument(
-            '--artifact-version', '-v',
+            '--artifact-version', '-V',
             metavar='<VERSION>',
             default='latest',
             help='Version of the artifact.',
@@ -240,15 +240,9 @@ class AddLocation(command.ShowOne):
             help='Specify a checksum sha256.',
         )
         parser.add_argument(
-            '--blob-property',
+            '--blob-property', '-p',
             metavar='<BLOB_PROPERTY>',
             help='Name of the blob field.'
-        )
-        parser.add_argument(
-            '--content-type',
-            metavar='<CONTENT_TYPE>',
-            default='application/vnd+openstack.glare-custom-location+json',
-            help='Content-type of the blob.'
         )
         return parser
 
@@ -272,7 +266,6 @@ class AddLocation(command.ShowOne):
             af_id,
             parsed_args.blob_property,
             data,
-            content_type=parsed_args.content_type,
             type_name=parsed_args.type_name)
 
         data = client.artifacts.get(af_id,

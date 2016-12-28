@@ -229,14 +229,13 @@ class Controller(object):
         self.http_client.put(url, headers=hdrs, data=data, stream=True)
 
     def add_external_location(self, artifact_id, blob_property, data,
-                              type_name=None, content_type=None):
+                              type_name=None):
         """Add external location.
 
         :param artifact_id: ID of the artifact to download a blob
         :param blob_property: blob property name
         """
-        content_type = (content_type or
-                        'application/vnd+openstack.glare-custom-location+json')
+        content_type = 'application/vnd+openstack.glare-custom-location+json'
 
         type_name = self._check_type_name(type_name)
         hdrs = {'Content-Type': content_type}
