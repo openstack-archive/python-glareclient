@@ -243,4 +243,19 @@ data_fixtures = {
             ]},
         ),
     },
+    '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c': {
+        'PATCH': (
+            {},
+            ''
+        ),
+        'GET': (
+            {},
+            {
+                'name': 'art_1',
+                'id': '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+                'version': '0.0.0',
+                'tags': ["a", "b", "c"]
+            }
+        )
+    },
 }

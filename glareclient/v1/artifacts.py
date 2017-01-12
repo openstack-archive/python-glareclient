@@ -274,3 +274,33 @@ class Controller(object):
         url = '/schemas/%s' % type_name
         resp, body = self.http_client.get(url)
         return body['schemas'][type_name]
+
+    def add_tag(self, artifact_id, tag_value, type_name=None):
+        """Add tag to artifact.
+
+        :param artifact_id: ID of the artifact to add a tag
+        :param tag_value: value of the tag to add
+        """
+        type_name = self._check_type_name(type_name)
+        url = '/artifacts/%s/%s' % (type_name, artifact_id)
+        resp, body = self.http_client.get(url)
+        tags = body['tags']
+        if tag_value in tags:
+            return body
+        tags.append(tag_value)
+        return self.update(artifact_id, type_name, tags=tags)
+
+    def remove_tag(self, artifact_id, tag_value, type_name=None):
+        """Remove tag from artifact.
+
+        :param artifact_id: ID of the artifact to remove a tag
+        :param tag_value: value of the tag to remove
+        """
+        type_name = self._check_type_name(type_name)
+        url = '/artifacts/%s/%s' % (type_name, artifact_id)
+        resp, body = self.http_client.get(url)
+        tags = body['tags']
+        if tag_value not in tags:
+            return body
+        tags.remove(tag_value)
+        return self.update(artifact_id, type_name, tags=tags)

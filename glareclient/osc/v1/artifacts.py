@@ -508,6 +508,92 @@ class PublishArtifact(command.Lister):
         return print_artifact(client, data, parsed_args.type_name)
 
 
+class AddTag(command.Lister):
+    """Add tag to artifact"""
+
+    def get_parser(self, prog_name):
+        parser = super(AddTag, self).get_parser(prog_name)
+        parser.add_argument(
+            'type_name',
+            metavar='<TYPE_NAME>',
+            action=TypeMapperAction,
+            help='Name of artifact type.',
+        )
+        parser.add_argument(
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to publish.',
+        )
+        parser.add_argument(
+            'tag',
+            metavar='<TAG>',
+            help='Value of the tag to add to the artifact.',
+        )
+        parser.add_argument(
+            '--artifact-version', '-V',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        )
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='Flag indicates to use artifact id instead of its name.',
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.add_tag(
+            af_id, tag_value=parsed_args.tag, type_name=parsed_args.type_name)
+        return print_artifact(client, data, parsed_args.type_name)
+
+
+class RemoveTag(command.Lister):
+    """Remove tag from the artifact"""
+
+    def get_parser(self, prog_name):
+        parser = super(RemoveTag, self).get_parser(prog_name)
+        parser.add_argument(
+            'type_name',
+            metavar='<TYPE_NAME>',
+            action=TypeMapperAction,
+            help='Name of artifact type.',
+        )
+        parser.add_argument(
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to publish.',
+        )
+        parser.add_argument(
+            'tag',
+            metavar='<TAG>',
+            help='Value of the tag to remove from the artifact.',
+        )
+        parser.add_argument(
+            '--artifact-version', '-V',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        )
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='Flag indicates to use artifact id instead of its name.',
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+        af_id = get_artifact_id(client, parsed_args)
+        data = client.artifacts.remove_tag(
+            af_id, tag_value=parsed_args.tag, type_name=parsed_args.type_name)
+        return print_artifact(client, data, parsed_args.type_name)
+
+
 class TypeList(command.Lister):
     """List of type names"""
 

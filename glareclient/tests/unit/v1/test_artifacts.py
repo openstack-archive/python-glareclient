@@ -412,3 +412,55 @@ class TestController(testtools.TestCase):
              'http://fake_url')]
         self.assertEqual(expect_call, self.api.calls)
         self.assertIsNone(data)
+
+    def test_add_tag(self):
+        art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
+        data = self.controller.add_tag(
+            art_id, tag_value="123", type_name='images')
+        expect_call = [
+            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {}, None),
+            ('PATCH',
+             '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {'Content-Type': 'application/json-patch+json'},
+             [{'op': 'add',
+               'path': '/tags',
+               'value': ['a', 'b', 'c', '123']}])]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertIsNotNone(data)
+
+    def test_add_existing_tag(self):
+        art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
+        data = self.controller.add_tag(
+            art_id, tag_value="a", type_name='images')
+        expect_call = [
+            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {}, None)]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertIsNotNone(data)
+
+    def test_remove_tag(self):
+        art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
+        data = self.controller.remove_tag(
+            art_id, tag_value="a", type_name='images')
+        expect_call = [
+            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {}, None),
+            ('PATCH',
+             '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {'Content-Type': 'application/json-patch+json'},
+             [{'op': 'add',
+               'path': '/tags',
+               'value': ['b', 'c']}])]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertIsNotNone(data)
+
+    def test_remove_nonexisting_tag(self):
+        art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
+        data = self.controller.remove_tag(
+            art_id, tag_value="123", type_name='images')
+        expect_call = [
+            ('GET', '/artifacts/images/07a679d8-d0a8-45ff-8d6e-2f32f2097b7c',
+             {}, None)]
+        self.assertEqual(expect_call, self.api.calls)
+        self.assertIsNotNone(data)
