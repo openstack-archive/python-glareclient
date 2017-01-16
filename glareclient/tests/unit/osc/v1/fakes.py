@@ -89,6 +89,8 @@ class TestArtifacts(utils.TestCommand):
         self.app.client_manager.artifact.artifacts.list = mock_list
         self.app.client_manager.artifact.artifacts.get = mock_get
         self.app.client_manager.artifact.artifacts.get_by_name = mock_get
+        self.app.client_manager.artifact.artifacts.add_tag = mock_g_servs
+        self.app.client_manager.artifact.artifacts.remove_tag = mock_g_servs
         self.app.client_manager.artifact.artifacts.create = mock_g_servs
         self.app.client_manager.artifact.artifacts.update = mock_g_servs
         self.app.client_manager.artifact.artifacts.delete = mock_g_servs

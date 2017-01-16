@@ -423,6 +423,58 @@ class TestReactivateArtifacts(TestArtifacts):
         self.assertEqual(self.COLUMNS, name_fields)
 
 
+class TestAddTag(TestArtifacts):
+
+    def setUp(self):
+        super(TestAddTag, self).setUp()
+        self.artifact_mock.call.return_value = \
+            api_art.Controller(self.http, type_name='images')
+
+        # Command to test
+        self.cmd = osc_art.AddTag(self.app, None)
+
+    def test_artifact_add_tag(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id',
+                   '123']
+        verify = [('type_name', 'images'),
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True),
+                  ('tag', '123')]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
+        # Check that columns are correct
+        self.assertEqual(self.COLUMNS, name_fields)
+
+
+class TestRemoveTag(TestArtifacts):
+
+    def setUp(self):
+        super(TestRemoveTag, self).setUp()
+        self.artifact_mock.call.return_value = \
+            api_art.Controller(self.http, type_name='images')
+
+        # Command to test
+        self.cmd = osc_art.RemoveTag(self.app, None)
+
+    def test_artifact_add_tag(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id',
+                   '123']
+        verify = [('type_name', 'images'),
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True),
+                  ('tag', '123')]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        columns, data = self.cmd.take_action(parsed_args)
+
+        name_fields = set([column[0] for column in data])
+        # Check that columns are correct
+        self.assertEqual(self.COLUMNS, name_fields)
+
+
 class TestPublishArtifacts(TestArtifacts):
 
     def setUp(self):
