@@ -120,7 +120,11 @@ class UploadBlob(command.ShowOne):
         data = client.artifacts.get(af_id, type_name=parsed_args.type_name)
 
         data_to_display = {'blob_property': parsed_args.blob_property}
-        data_to_display.update(data[parsed_args.blob_property])
+        if '/' in parsed_args.blob_property:
+            dict_name, __, key_name = parsed_args.blob_property.partition('/')
+            data_to_display.update(data[dict_name][key_name])
+        else:
+            data_to_display.update(data[parsed_args.blob_property])
         return self.dict2columns(data_to_display)
 
 
@@ -272,5 +276,9 @@ class AddLocation(command.ShowOne):
                                     type_name=parsed_args.type_name)
 
         data_to_display = {'blob_property': parsed_args.blob_property}
-        data_to_display.update(data[parsed_args.blob_property])
+        if '/' in parsed_args.blob_property:
+            dict_name, __, key_name = parsed_args.blob_property.partition('/')
+            data_to_display.update(data[dict_name][key_name])
+        else:
+            data_to_display.update(data[parsed_args.blob_property])
         return self.dict2columns(data_to_display)
