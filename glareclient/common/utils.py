@@ -63,18 +63,19 @@ class ResponseBlobWrapper(object):
 
     def __init__(self, resp, verify_md5=True):
         self.hash_md5 = resp.headers.get("Content-MD5")
-        self.check_md5 = hashlib.md5()
+        self.blob_md5 = hashlib.md5()
         if 301 <= resp.status_code <= 302:
             # NOTE(sskripnick): handle redirect manually to prevent sending
             # auth token to external resource.
             # Use stream=True to prevent reading whole response into memory.
             # Set Accept-Encoding explicitly to "identity" because setting
-            # stream=True forces Accept-Encoding to be "gzip, defalate".
+            # stream=True forces Accept-Encoding to be "gzip, deflate".
             # It should be "identity" because we should know Content-Length.
             resp = requests.get(resp.headers.get("Location"),
                                 headers={"Accept-Encoding": "identity"})
         self.len = resp.headers.get("Content-Length", 0)
         self.iter = resp.iter_content(65536)
+        self.verify_md5 = verify_md5
 
     def __iter__(self):
         return self
@@ -82,13 +83,14 @@ class ResponseBlobWrapper(object):
     def next(self):
         try:
             data = self.iter.next()
-            self.check_md5.update(data)
+            if self.verify_md5:
+                self.blob_md5.update(data)
             return data
         except StopIteration:
-            if self.check_md5.hexdigest() != self.hash_md5:
+            if self.verify_md5 and self.blob_md5.hexdigest() != self.hash_md5:
                 raise IOError(errno.EPIPE,
                               'Checksum mismatch: %s (expected %s)' %
-                              (self.check_md5.hexdigest(), self.hash_md5))
+                              (self.blob_md5.hexdigest(), self.hash_md5))
             raise
 
     __next__ = next

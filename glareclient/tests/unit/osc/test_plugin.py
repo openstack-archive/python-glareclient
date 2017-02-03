@@ -25,10 +25,13 @@ class TestArtifactPlugin(base.TestCaseShell):
         instance._api_version = {"artifact": '1'}
         instance._region_name = 'glare_region'
         instance.session = 'glare_session'
+        instance.get_configuration.return_value = {
+            'glare_url': 'http://example.com:9494/',
+            'keycloak_auth_url': None}
 
         plugin.make_client(instance)
         p_client.assert_called_with(
-            mock.ANY,
+            'http://example.com:9494/',
             region_name='glare_region',
             session='glare_session',
             service_type='artifact')

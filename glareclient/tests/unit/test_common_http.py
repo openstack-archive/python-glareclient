@@ -104,7 +104,7 @@ class HttpClientTest(testtools.TestCase):
             headers={'X-Region-Name': 'RegionOne',
                      'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request(self, mock_request):
+    def test_http_process_request(self, mock_request):
         # Record a 200
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
@@ -112,7 +112,7 @@ class HttpClientTest(testtools.TestCase):
                 {'content-type': 'application/json'},
                 '{}')
         client = http.HTTPClient('http://example.com:9494')
-        resp, body = client.json_request('', 'GET')
+        resp, body = client.process_request('', 'GET')
         self.assertEqual(200, resp.status_code)
         self.assertEqual({}, body)
 
@@ -121,7 +121,8 @@ class HttpClientTest(testtools.TestCase):
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request_argument_passed_to_requests(self, mock_request):
+    def test_http_process_request_argument_passed_to_requests(
+            self, mock_request):
         """Check that we have sent the proper arguments to requests."""
         # Record a 200
         mock_request.return_value = \
@@ -135,7 +136,7 @@ class HttpClientTest(testtools.TestCase):
         client.cert_file = 'RANDOM_CERT_FILE'
         client.key_file = 'RANDOM_KEY_FILE'
         client.auth_url = 'http://AUTH_URL'
-        resp, body = client.json_request('', 'GET', data='text')
+        resp, body = client.process_request('', 'GET', data='text')
         self.assertEqual(200, resp.status_code)
         self.assertEqual({}, body)
 
@@ -148,7 +149,7 @@ class HttpClientTest(testtools.TestCase):
             headers={'X-Auth-Url': 'http://AUTH_URL',
                      'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request_w_req_body(self, mock_request):
+    def test_http_process_request_w_req_body(self, mock_request):
         # Record a 200
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
@@ -157,7 +158,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')
 
         client = http.HTTPClient('http://example.com:9494')
-        resp, body = client.json_request('', 'GET', data='test-body')
+        resp, body = client.process_request('', 'GET', data='test-body')
         self.assertEqual(200, resp.status_code)
         self.assertEqual({}, body)
         mock_request.assert_called_once_with(
@@ -166,7 +167,8 @@ class HttpClientTest(testtools.TestCase):
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request_non_json_resp_cont_type(self, mock_request):
+    def test_http_process_request_non_json_resp_cont_type(
+            self, mock_request):
         # Record a 200
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
@@ -175,14 +177,14 @@ class HttpClientTest(testtools.TestCase):
                 '{}')
 
         client = http.HTTPClient('http://example.com:9494')
-        resp, body = client.json_request('', 'GET', data='test-data')
+        resp, body = client.process_request('', 'GET', data='test-data')
         self.assertEqual(200, resp.status_code)
         mock_request.assert_called_once_with(
             'GET', 'http://example.com:9494', data='test-data',
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request_invalid_json(self, mock_request):
+    def test_http_process_request_invalid_json(self, mock_request):
         # Record a 200
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
@@ -191,7 +193,7 @@ class HttpClientTest(testtools.TestCase):
                 'invalid-json')
 
         client = http.HTTPClient('http://example.com:9494')
-        resp, body = client.json_request('', 'GET')
+        resp, body = client.process_request('', 'GET')
         self.assertEqual(200, resp.status_code)
         self.assertIsNone(body)
         mock_request.assert_called_once_with(
@@ -211,7 +213,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494/foo')
-        resp, body = client.json_request('', 'DELETE')
+        resp, body = client.process_request('', 'DELETE')
 
         self.assertEqual(200, resp.status_code)
         mock_request.assert_has_calls([
@@ -235,7 +237,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494/foo')
-        resp, body = client.json_request('', 'POST', json={})
+        resp, body = client.process_request('', 'POST', json={})
 
         self.assertEqual(200, resp.status_code)
         mock_request.assert_has_calls([
@@ -261,7 +263,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494/foo')
-        resp, body = client.json_request('', 'PUT', json={})
+        resp, body = client.process_request('', 'PUT', json={})
 
         self.assertEqual(200, resp.status_code)
         mock_request.assert_has_calls([
@@ -283,7 +285,7 @@ class HttpClientTest(testtools.TestCase):
                 '')
         client = http.HTTPClient('http://example.com:9494/foo')
         self.assertRaises(exc.InvalidEndpoint,
-                          client.json_request, '', 'DELETE')
+                          client.process_request, '', 'DELETE')
         mock_request.assert_called_once_with(
             'DELETE', 'http://example.com:9494/foo',
             allow_redirects=False,
@@ -297,13 +299,13 @@ class HttpClientTest(testtools.TestCase):
                 '')
         client = http.HTTPClient('http://example.com:9494/foo')
         self.assertRaises(exc.InvalidEndpoint,
-                          client.json_request, '', 'DELETE')
+                          client.process_request, '', 'DELETE')
         mock_request.assert_called_once_with(
             'DELETE', 'http://example.com:9494/foo',
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_http_json_request_redirect(self, mock_request):
+    def test_http_process_request_redirect(self, mock_request):
         # Record the 302
         mock_request.side_effect = [
             fakes.FakeHTTPResponse(
@@ -316,7 +318,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')]
 
         client = http.HTTPClient('http://example.com:9494')
-        resp, body = client.json_request('', 'GET')
+        resp, body = client.process_request('', 'GET')
         self.assertEqual(200, resp.status_code)
         self.assertEqual({}, body)
 
@@ -329,14 +331,15 @@ class HttpClientTest(testtools.TestCase):
                       headers={'User-Agent': 'python-glareclient'})
         ])
 
-    def test_http_404_json_request(self, mock_request):
+    def test_http_404_process_request(self, mock_request):
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
                 404, 'Not Found', {'content-type': 'application/json'},
                 '{}')
 
         client = http.HTTPClient('http://example.com:9494')
-        e = self.assertRaises(exc.HTTPNotFound, client.json_request, '', 'GET')
+        e = self.assertRaises(exc.HTTPNotFound, client.process_request,
+                              '', 'GET')
         # Assert that the raised exception can be converted to string
         self.assertIsNotNone(str(e))
         # Record a 404
@@ -345,14 +348,14 @@ class HttpClientTest(testtools.TestCase):
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_http_300_json_request(self, mock_request):
+    def test_http_300_process_request(self, mock_request):
         mock_request.return_value = \
             fakes.FakeHTTPResponse(
                 300, 'OK', {'content-type': 'application/json'},
                 '{}')
         client = http.HTTPClient('http://example.com:9494')
         e = self.assertRaises(
-            exc.HTTPMultipleChoices, client.json_request, '', 'GET')
+            exc.HTTPMultipleChoices, client.process_request, '', 'GET')
         # Assert that the raised exception can be converted to string
         self.assertIsNotNone(str(e))
 
@@ -362,7 +365,7 @@ class HttpClientTest(testtools.TestCase):
             allow_redirects=False,
             headers={'User-Agent': 'python-glareclient'})
 
-    def test_fake_json_request(self, mock_request):
+    def test_fake_process_request(self, mock_request):
         headers = {'User-Agent': 'python-glareclient'}
         mock_request.side_effect = [socket.gaierror]
 
@@ -403,7 +406,7 @@ class HttpClientTest(testtools.TestCase):
                 '{}')
 
         client = http.HTTPClient('http://example.com:9494', timeout='123')
-        resp, body = client.json_request('', 'GET')
+        resp, body = client.process_request('', 'GET')
         self.assertEqual(200, resp.status_code)
         self.assertEqual({}, body)
         mock_request.assert_called_once_with(

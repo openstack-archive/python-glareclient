@@ -27,6 +27,7 @@ import six
 from six.moves import urllib
 
 from glareclient.common import exceptions as exc
+from glareclient.common import keycloak_auth
 
 LOG = logging.getLogger(__name__)
 USER_AGENT = 'python-glareclient'
@@ -59,14 +60,28 @@ def _handle_response(resp):
                 body_iter = jsonutils.loads(''.join([c for c in body_iter]))
             except ValueError:
                 body_iter = None
-        elif content_type.startswith('application/json'):
+        elif 'json' in content_type:
             # Let's use requests json method, it should take care of
             # response encoding
-            body_iter = resp.json()
+            try:
+                body_iter = resp.json()
+            except Exception:
+                body_iter = None
         else:
             # Do not read all response in memory when downloading a blob.
             body_iter = _close_after_stream(resp, CHUNKSIZE)
         return resp, body_iter
+
+
+def _close_after_stream(response, chunk_size):
+    """Iterate over the content and ensure the response is closed after."""
+    # Yield each chunk in the response body
+    for chunk in response.iter_content(chunk_size=chunk_size):
+        yield chunk
+    # Once we're done streaming the body, ensure everything is closed.
+    # This will return the connection to the HTTPConnectionPool in urllib3
+    # and ideally reduce the number of HTTPConnectionPool full warnings.
+    response.close()
 
 
 class HTTPClient(object):
@@ -74,12 +89,13 @@ class HTTPClient(object):
     def __init__(self, endpoint, **kwargs):
         self.endpoint = endpoint
         self.auth_url = kwargs.get('auth_url')
-        self.auth_token = kwargs.get('token')
+        self.auth_token = kwargs.get('auth_token')
         self.username = kwargs.get('username')
         self.password = kwargs.get('password')
         self.region_name = kwargs.get('region_name')
         self.include_pass = kwargs.get('include_pass')
         self.endpoint_url = endpoint
+        self.tenant_name = kwargs.get('tenant_name')
 
         self.cert_file = kwargs.get('cert_file')
         self.key_file = kwargs.get('key_file')
@@ -170,6 +186,8 @@ class HTTPClient(object):
             kwargs['headers'].setdefault('X-Auth-Url', self.auth_url)
         if self.region_name:
             kwargs['headers'].setdefault('X-Region-Name', self.region_name)
+        if self.tenant_name:
+            kwargs['headers'].setdefault('X-Project-Id', self.tenant_name)
 
         self.log_curl_request(url, method, kwargs)
 
@@ -183,7 +201,7 @@ class HTTPClient(object):
             kwargs['timeout'] = float(self.timeout)
 
         # Allow the option not to follow redirects
-        follow_redirects = kwargs.pop('follow_redirects', True)
+        follow_redirects = kwargs.pop('redirect', True)
 
         # Since requests does not follow the RFC when doing redirection to sent
         # back the same method on a redirect we are simply bypassing it.  For
@@ -194,7 +212,6 @@ class HTTPClient(object):
         # point version i.e.: 3.x
         # See issue: https://github.com/kennethreitz/requests/issues/1704
         allow_redirects = False
-
         try:
             resp = requests.request(
                 method,
@@ -255,31 +272,27 @@ class HTTPClient(object):
             creds['X-Auth-Key'] = self.password
         return creds
 
-    def json_request(self, url, method, **kwargs):
+    def process_request(self, url, method, **kwargs):
         resp = self.request(url, method, **kwargs)
         return _handle_response(resp)
 
-    def json_patch_request(self, url, method='PATCH', **kwargs):
-        return self.json_request(
-            url, method, **kwargs)
-
     def head(self, url, **kwargs):
-        return self.json_request(url, "HEAD", **kwargs)
+        return self.process_request(url, "HEAD", **kwargs)
 
     def get(self, url, **kwargs):
-        return self.json_request(url, "GET", **kwargs)
+        return self.process_request(url, "GET", **kwargs)
 
     def post(self, url, **kwargs):
-        return self.json_request(url, "POST", **kwargs)
+        return self.process_request(url, "POST", **kwargs)
 
     def put(self, url, **kwargs):
-        return self.json_request(url, "PUT", **kwargs)
+        return self.process_request(url, "PUT", **kwargs)
 
     def delete(self, url, **kwargs):
         return self.request(url, "DELETE", **kwargs)
 
     def patch(self, url, **kwargs):
-        return self.json_request(url, "PATCH", **kwargs)
+        return self.process_request(url, "PATCH", **kwargs)
 
 
 class SessionClient(adapter.LegacyJsonAdapter):
@@ -299,7 +312,8 @@ def construct_http_client(*args, **kwargs):
     session = kwargs.pop('session', None)
     auth = kwargs.pop('auth', None)
     endpoint = next(iter(args), None)
-
+    keycloak_auth_url = kwargs.pop('keycloak_auth_url', None)
+    auth_token = kwargs.pop('auth_token', None)
     if session:
         service_type = kwargs.pop('service_type', None)
         endpoint_type = kwargs.pop('endpoint_type', None)
@@ -318,6 +332,17 @@ def construct_http_client(*args, **kwargs):
         parameters.update(kwargs)
         return SessionClient(**parameters)
     elif endpoint:
+        realm_name = kwargs.pop('keycloak_realm_name', None)
+        if keycloak_auth_url is not None:
+            kwargs['auth_token'] = keycloak_auth.authenticate(
+                auth_url=keycloak_auth_url,
+                client_id=kwargs.pop('openid_client_id', None),
+                username=kwargs.pop('keycloak_username', None),
+                password=kwargs.pop('keycloak_password', None),
+                realm_name=realm_name
+            )
+        else:
+            kwargs['auth_token'] = auth_token
         return HTTPClient(endpoint, **kwargs)
     else:
         raise AttributeError('Constructing a client must contain either an '

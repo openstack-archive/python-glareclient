@@ -34,14 +34,13 @@ def make_client(instance):
         API_VERSIONS)
     LOG.debug("Instantiating glare client: {0}".format(
               glare_client))
-
-    client = glare_client(
-        instance.get_configuration().get('glare_url'),
+    kwargs = dict(
         region_name=instance._region_name,
         session=instance.session,
         service_type='artifact',
     )
-    return client
+    return glare_client(instance.get_configuration().get('glare_url'),
+                        **kwargs)
 
 
 def build_option_parser(parser):
@@ -51,10 +50,10 @@ def build_option_parser(parser):
         metavar='<artifact-api-version>',
         default=utils.env('OS_ARTIFACT_API_VERSION'),
         help=_('Artifact API version, default=%s '
-               '(Env: OS_ARTIFACT_API_VERSION)') % DEFAULT_API_VERSION,
-    )
-    parser.add_argument('--glare-url',
-                        metavar='<GLARE_URL>',
-                        default=utils.env('GLARE_URL'),
-                        help='Defaults to env[GLARE_URL].')
+               '(Env: OS_ARTIFACT_API_VERSION)') % DEFAULT_API_VERSION)
+    parser.add_argument(
+        '--glare-url',
+        metavar='<GLARE_URL>',
+        default=utils.env('GLARE_URL'),
+        help='Defaults to env[GLARE_URL].')
     return parser
