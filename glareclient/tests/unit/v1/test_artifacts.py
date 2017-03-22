@@ -106,7 +106,7 @@ class TestController(testtools.TestCase):
                                               status='active')
 
     def test_delete(self):
-        self.assertEqual(None, self.c.delete('test-id', type_name='test-name'))
+        self.assertIsNone(self.c.delete('test-id', type_name='test-name'))
         self.mock_http_client.delete.assert_called_once_with(
             '/artifacts/checked_name/test-id')
 
