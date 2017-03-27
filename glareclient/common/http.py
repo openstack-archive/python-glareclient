@@ -333,7 +333,7 @@ def construct_http_client(*args, **kwargs):
         return SessionClient(**parameters)
     elif endpoint:
         realm_name = kwargs.pop('keycloak_realm_name', None)
-        if keycloak_auth_url is not None:
+        if keycloak_auth_url:
             kwargs['auth_token'] = keycloak_auth.authenticate(
                 auth_url=keycloak_auth_url,
                 client_id=kwargs.pop('openid_client_id', None),

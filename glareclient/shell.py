@@ -306,6 +306,8 @@ class GlareShell(app.App):
             'publish': glareclient.osc.v1.artifacts.PublishArtifact,
             'add-tag': glareclient.osc.v1.artifacts.AddTag,
             'remove-tag': glareclient.osc.v1.artifacts.RemoveTag,
+            'type-list': glareclient.osc.v1.artifacts.TypeList,
+            'schema': glareclient.osc.v1.artifacts.TypeSchema,
             'upload': glareclient.osc.v1.blobs.UploadBlob,
             'download': glareclient.osc.v1.blobs.DownloadBlob,
             'location': glareclient.osc.v1.blobs.AddLocation
