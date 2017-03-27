@@ -40,8 +40,8 @@ def _default_blob_property(type_name):
 def get_artifact_id(client, parsed_args):
     if parsed_args.id:
         if parsed_args.artifact_version != 'latest':
-            LOG.warn('Specified version is not considered when '
-                     'receiving of the artifact by ID.')
+            LOG.warning('Specified version is not considered when '
+                        'receiving of the artifact by ID.')
         return parsed_args.name
 
     return client.artifacts.get_by_name(parsed_args.name,
