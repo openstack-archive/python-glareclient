@@ -37,18 +37,6 @@ def _default_blob_property(type_name):
     utils.exit('Unknown artifact type. Please specify --blob-property.')
 
 
-def get_artifact_id(client, parsed_args):
-    if parsed_args.id:
-        if parsed_args.artifact_version != 'latest':
-            LOG.warning('Specified version is not considered when '
-                        'receiving of the artifact by ID.')
-        return parsed_args.name
-
-    return client.artifacts.get_by_name(parsed_args.name,
-                                        version=parsed_args.artifact_version,
-                                        type_name=parsed_args.type_name)['id']
-
-
 class UploadBlob(command.ShowOne):
     """Upload blob"""
 
@@ -102,7 +90,7 @@ class UploadBlob(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = utils.get_artifact_id(client, parsed_args)
 
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(
@@ -186,7 +174,7 @@ class DownloadBlob(command.Command):
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(
                 parsed_args.type_name)
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.download_blob(af_id,
                                               parsed_args.blob_property,
                                               type_name=parsed_args.type_name)
@@ -258,7 +246,7 @@ class AddLocation(command.ShowOne):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = utils.get_artifact_id(client, parsed_args)
 
         if not parsed_args.blob_property:
             parsed_args.blob_property = _default_blob_property(

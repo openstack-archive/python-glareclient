@@ -110,13 +110,32 @@ class Controller(object):
         """Get information about an artifact by name.
 
         :param name: name of the artifact to get.
+        :param version: version of the artifact to get
+        :param type_name: type name of the artifact
         """
         type_name = self._check_type_name(type_name)
         url = '/artifacts/%s?version=%s&name=%s' % (type_name, version, name)
         resp, body = self.http_client.get(url)
-        if not body[type_name]:
-            utils.exit('Artifact with name=%s and version=%s not found.' %
-                       (name, version))
+        arts = body[type_name]
+        if not arts:
+            msg = ('Artifact with name=%s and version=%s not found.' %
+                   (name, version))
+            raise exc.BadRequest(msg)
+        if len(arts) > 1:
+            if type_name != "all":
+                output = "\n".join([
+                    "Artifact: %s, owner: %s, visibility: %s" % (
+                        i['id'], i['owner'], i['visibility']) for i in arts])
+            else:
+                output = "\n".join([
+                    "Artifact: %s, owner: %s, visibility: %s, type: %s" % (
+                        i['id'], i['owner'], i['visibility'], i['type_name'])
+                    for i in arts])
+            msg = (
+                'There are more then one artifact with name=%s and version=%s.'
+                ' Please provide the concrete id from the list:\n%s' %
+                (name, version, output))
+            raise exc.BadRequest(msg)
         return body[type_name][0]
 
     def list(self, type_name=None, **kwargs):

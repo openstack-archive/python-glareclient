@@ -29,6 +29,8 @@ from oslo_utils import encodeutils
 from oslo_utils import importutils
 import requests
 
+from glareclient import exc
+
 SENSITIVE_HEADERS = ('X-Auth-Token', )
 
 
@@ -159,3 +161,15 @@ def save_blob(data, path):
     finally:
         if path is not None:
             blob.close()
+
+
+def get_artifact_id(client, parsed_args):
+    if parsed_args.id:
+        return parsed_args.name
+    try:
+        return client.artifacts.get_by_name(
+            parsed_args.name,
+            version=parsed_args.artifact_version,
+            type_name=parsed_args.type_name)['id']
+    except exc.BadRequest as e:
+        exit(msg=e.details)

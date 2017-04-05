@@ -33,7 +33,7 @@ class TestUpload(testtools.TestCase):
     @mock.patch('glareclient.osc.v1.blobs.progressbar')
     @mock.patch('glareclient.osc.v1.blobs.sys')
     @mock.patch('glareclient.osc.v1.blobs.open', create=True)
-    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    @mock.patch('glareclient.common.utils.get_artifact_id')
     def test_upload_file_progress(self, mock_get_id,
                                   mock_open, mock_sys, mock_progressbar):
         mock_parsed_args = mock.Mock(name='test-id',
@@ -58,7 +58,7 @@ class TestUpload(testtools.TestCase):
 
     @mock.patch('glareclient.osc.v1.blobs.sys')
     @mock.patch('glareclient.osc.v1.blobs.open', create=True)
-    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    @mock.patch('glareclient.common.utils.get_artifact_id')
     def test_upload_file_no_progress(self, mock_get_id, mock_open, mock_sys):
         mock_parsed_args = mock.Mock(name='test-id',
                                      id=True,
@@ -80,7 +80,7 @@ class TestUpload(testtools.TestCase):
             assert_called_once_with(*upload_args, **upload_kwargs)
 
     @mock.patch('glareclient.osc.v1.blobs.sys')
-    @mock.patch('glareclient.osc.v1.blobs.get_artifact_id')
+    @mock.patch('glareclient.common.utils.get_artifact_id')
     def test_upload_file_stdin(self, mock_get_id, mock_sys):
         mock_sys.stdin.isatty.return_value = False
         mock_parsed_args = mock.Mock(name='test-id',

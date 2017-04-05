@@ -42,18 +42,6 @@ def print_artifact(client, data, type_name):
                 table)
 
 
-def get_artifact_id(client, parsed_args):
-    if parsed_args.id:
-        if parsed_args.artifact_version != 'latest':
-            LOG.warning('Specified version is not considered when '
-                        'receiving of the artifact by ID.')
-        return parsed_args.name
-
-    return client.artifacts.get_by_name(parsed_args.name,
-                                        version=parsed_args.artifact_version,
-                                        type_name=parsed_args.type_name)['id']
-
-
 class ListArtifacts(command.Lister):
     """List of artifacts"""
 
@@ -151,7 +139,7 @@ class ShowArtifact(command.Lister):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
 
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.get(af_id,
                                     type_name=parsed_args.type_name)
 
@@ -311,7 +299,7 @@ class UpdateArtifact(command.Lister):
                 prop[key][k] = v
 
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.update(
             af_id, type_name=parsed_args.type_name,
             remove_props=parsed_args.remove_property, **prop)
@@ -351,7 +339,7 @@ class DeleteArtifact(command.Command):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         client.artifacts.delete(af_id,
                                 type_name=parsed_args.type_name)
 
@@ -388,7 +376,7 @@ class ActivateArtifact(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.activate(af_id,
                                          type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
@@ -426,7 +414,7 @@ class DeactivateArtifact(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.deactivate(af_id,
                                            type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
@@ -464,7 +452,7 @@ class ReactivateArtifact(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.reactivate(af_id,
                                            type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
@@ -502,7 +490,7 @@ class PublishArtifact(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.publish(af_id,
                                         type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
@@ -545,7 +533,7 @@ class AddTag(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.add_tag(
             af_id, tag_value=parsed_args.tag, type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
@@ -588,7 +576,7 @@ class RemoveTag(command.Lister):
     def take_action(self, parsed_args):
         LOG.debug('take_action({0})'.format(parsed_args))
         client = self.app.client_manager.artifact
-        af_id = get_artifact_id(client, parsed_args)
+        af_id = glare_utils.get_artifact_id(client, parsed_args)
         data = client.artifacts.remove_tag(
             af_id, tag_value=parsed_args.tag, type_name=parsed_args.type_name)
         return print_artifact(client, data, parsed_args.type_name)
