@@ -18,7 +18,6 @@ Command-line interface to the Glare APIs
 
 import argparse
 import logging
-import os
 import sys
 
 from cliff import app
@@ -29,18 +28,6 @@ from glareclient import client
 from glareclient.common import utils
 import glareclient.osc.v1.artifacts
 import glareclient.osc.v1.blobs
-
-
-def env(*args, **kwargs):
-    """Returns the first environment variable set.
-
-    If all are empty, defaults to '' or keyword arg `default`.
-    """
-    for arg in args:
-        value = os.environ.get(arg)
-        if value:
-            return value
-    return kwargs.get('default', '')
 
 
 class OpenStackHelpFormatter(argparse.HelpFormatter):
@@ -189,22 +176,17 @@ class GlareShell(app.App):
             '--os-glare-url',
             action='store',
             dest='glare_url',
-            default=env('OS_GLARE_URL'),
+            default=utils.env('OS_GLARE_URL'),
             help='Glare API host (Env: OS_GLARE_URL)'
         )
         parser.add_argument(
             '--os-glare-version',
             action='store',
             dest='glare_version',
-            default=env('OS_GLARE_VERSION', default='v1'),
+            default=utils.env('OS_GLARE_VERSION', default='v1'),
             help='Glare API version (default = v1) (Env: '
                  'OS_GLARE_VERSION)'
         )
-        parser.add_argument(
-            '--glare-url',
-            metavar='<GLARE_URL>',
-            default=utils.env('GLARE_URL'),
-            help='Glare endpoint url (Env: GLARE_URL)')
         parser.add_argument(
             '--keycloak-auth-url',
             action='store',
