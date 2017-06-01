@@ -283,6 +283,7 @@ class GlareShell(app.App):
             'create': glareclient.osc.v1.artifacts.CreateArtifact,
             'delete': glareclient.osc.v1.artifacts.DeleteArtifact,
             'update': glareclient.osc.v1.artifacts.UpdateArtifact,
+            'activate': glareclient.osc.v1.artifacts.ActivateArtifact,
             'deactivate': glareclient.osc.v1.artifacts.DeactivateArtifact,
             'reactivate': glareclient.osc.v1.artifacts.ReactivateArtifact,
             'publish': glareclient.osc.v1.artifacts.PublishArtifact,
