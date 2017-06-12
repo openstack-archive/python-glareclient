@@ -51,9 +51,3 @@ def build_option_parser(parser):
         default=utils.env('OS_ARTIFACT_API_VERSION'),
         help=_('Artifact API version, default=%s '
                '(Env: OS_ARTIFACT_API_VERSION)') % DEFAULT_API_VERSION)
-    parser.add_argument(
-        '--glare-url',
-        metavar='<GLARE_URL>',
-        default=utils.env('GLARE_URL'),
-        help='Defaults to env[GLARE_URL].')
-    return parser
