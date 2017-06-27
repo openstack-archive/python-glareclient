@@ -51,3 +51,5 @@ def build_option_parser(parser):
         default=utils.env('OS_ARTIFACT_API_VERSION'),
         help=_('Artifact API version, default=%s '
                '(Env: OS_ARTIFACT_API_VERSION)') % DEFAULT_API_VERSION)
+
+    return parser
