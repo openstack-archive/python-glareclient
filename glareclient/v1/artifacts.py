@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+
 from oslo_serialization import jsonutils
 from oslo_utils import encodeutils
 import six
@@ -244,8 +246,22 @@ class Controller(object):
         :param blob_property: blob property name
         """
         content_type = content_type or 'application/octet-stream'
-        type_name = self._check_type_name(type_name)
         hdrs = {'Content-Type': content_type}
+        type_name = self._check_type_name(type_name)
+
+        content_length = None
+        if isinstance(data, six.string_types):
+            content_length = len(data)
+        else:
+            try:
+                content_length = os.path.getsize(data.name)
+            except Exception:
+                # if for some reason we can't get the file size, then we just
+                # ignore it.
+                pass
+        if content_length is not None:
+            hdrs['Content-Length'] = str(content_length)
+
         url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
         self.http_client.put(url, headers=hdrs, data=data)
 

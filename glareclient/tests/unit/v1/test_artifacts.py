@@ -13,6 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import io
+import os
+import tempfile
+
 import mock
 from oslo_serialization import jsonutils
 import testtools
@@ -110,13 +114,38 @@ class TestController(testtools.TestCase):
         self.mock_http_client.delete.assert_called_once_with(
             '/artifacts/checked_name/test-id')
 
-    def test_upload_blob(self):
+    def test_upload_blob_str(self):
         self.c.upload_blob('test-id', 'blob-prop', 'data',
                            type_name='test-type',
                            content_type='application/test')
         self.mock_http_client.put.assert_called_once_with(
             '/artifacts/checked_name/test-id/blob-prop',
-            data='data', headers={'Content-Type': 'application/test'})
+            data='data', headers={'Content-Length': '4',
+                                  'Content-Type': 'application/test'})
+
+    def test_upload_blob_file(self):
+        tfd, path = tempfile.mkstemp()
+        try:
+            os.write(tfd, b'data')
+            tfile = open(path, "rb")
+            self.c.upload_blob('test-id', 'blob-prop', tfile,
+                               type_name='test-type',
+                               content_type='application/test')
+            self.mock_http_client.put.assert_called_once_with(
+                '/artifacts/checked_name/test-id/blob-prop',
+                data=tfile, headers={'Content-Length': '4',
+                                     'Content-Type': 'application/test'})
+        finally:
+            os.remove(path)
+
+    def test_upload_blob_stream(self):
+        data = io.BytesIO(b'data')
+        self.c.upload_blob('test-id', 'blob-prop', data,
+                           type_name='test-type',
+                           content_type='application/test')
+        self.mock_http_client.put.assert_called_once_with(
+            '/artifacts/checked_name/test-id/blob-prop',
+            data=data, headers={'Content-Type': 'application/test'})
 
     def test_get_type_list(self):
         schemas = {'schemas': {'a': {'version': 1}, 'b': {'version': 2}}}
