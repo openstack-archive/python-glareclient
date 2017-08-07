@@ -293,7 +293,8 @@ class GlareShell(app.App):
             'schema': glareclient.osc.v1.artifacts.TypeSchema,
             'upload': glareclient.osc.v1.blobs.UploadBlob,
             'download': glareclient.osc.v1.blobs.DownloadBlob,
-            'location': glareclient.osc.v1.blobs.AddLocation
+            'location': glareclient.osc.v1.blobs.AddLocation,
+            'remove-location': glareclient.osc.v1.blobs.RemoveLocation
         }
 
 

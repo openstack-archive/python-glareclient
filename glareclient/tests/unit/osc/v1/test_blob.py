@@ -221,3 +221,31 @@ class TestAddLocation(TestBlobs):
         columns, data = self.cmd.take_action(parsed_args)
         self.app.client_manager.artifact.artifacts.get = fakes.mock_get
         self.assertEqual(self.COLUMNS, columns)
+
+
+class TestRemoveLocation(TestBlobs):
+    def setUp(self):
+        super(TestRemoveLocation, self).setUp()
+        self.blob_mock.call.return_value = \
+            api_art.Controller(self.http, type_name='images')
+
+        # Command to test
+        self.cmd = osc_blob.RemoveLocation(self.app, None)
+
+    def test_remove_location(self):
+        arglist = ['images',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
+        verify = [('type_name', 'images'),
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        self.assertIsNone(self.cmd.take_action(parsed_args))
+
+    def test_remove_dict_location(self):
+        arglist = ['images', '--blob-property', 'nested_templates/blob',
+                   'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba', '--id']
+        verify = [('type_name', 'images'),
+                  ('name', 'fc15c365-d4f9-4b8b-a090-d9e230f1f6ba'),
+                  ('id', True)]
+        parsed_args = self.check_parser(self.cmd, arglist, verify)
+        self.assertIsNone(self.cmd.take_action(parsed_args))

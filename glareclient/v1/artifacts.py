@@ -267,6 +267,18 @@ class Controller(object):
             raise exc.HTTPBadRequest("json is malformed.")
         self.http_client.put(url, headers=hdrs, data=data)
 
+    def remove_external_location(self, artifact_id, blob_property,
+                                 type_name=None):
+        """Remove external location.
+
+        :param artifact_id: ID of the artifact with external location
+         to be removed
+        :param blob_property: blob property name
+        """
+        type_name = self._check_type_name(type_name)
+        url = '/artifacts/%s/%s/%s' % (type_name, artifact_id, blob_property)
+        self.http_client.delete(url)
+
     def download_blob(self, artifact_id, blob_property, type_name=None,
                       do_checksum=True):
         """Get blob data.
