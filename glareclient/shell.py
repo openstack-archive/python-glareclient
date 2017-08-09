@@ -225,6 +225,35 @@ class GlareShell(app.App):
             dest='keycloak_password',
             default=utils.env('KEYCLOAK_PASSWORD'),
             help='Keycloak user password (Env: KEYCLOAK_PASSWORD)')
+        parser.add_argument(
+            '--cert',
+            action='store',
+            dest='cert_file',
+            default=utils.env('OS_GLARE_CERT'),
+            help='Client Certificate (Env: OS_GLARE_CERT)'
+        )
+        parser.add_argument(
+            '--key',
+            action='store',
+            dest='key_file',
+            default=utils.env('OS_GLARE_KEY'),
+            help='Client Key (Env: OS_GLARE_KEY)'
+        )
+        parser.add_argument(
+            '--cacert',
+            action='store',
+            dest='cacert',
+            default=utils.env('OS_GLARE_CACERT'),
+            help='Authentication CA Certificate (Env: OS_GLARE_CACERT)'
+        )
+        parser.add_argument(
+            '--insecure',
+            action='store_true',
+            dest='insecure',
+            default=utils.env('GLARECLIENT_INSECURE', default=False),
+            help='Disables SSL/TLS certificate verification '
+                 '(Env: GLARELCLIENT_INSECURE)'
+        )
 
         return parser
 
@@ -250,6 +279,10 @@ class GlareShell(app.App):
             keycloak_realm_name=self.options.keycloak_realm_name,
             keycloak_username=self.options.keycloak_username,
             keycloak_password=self.options.keycloak_password,
+            cert_file=self.options.cert_file,
+            key_file=self.options.key_file,
+            cacert=self.options.cacert,
+            insecure=self.options.insecure
         )
 
         # Adding client_manager variable to make glare client work with
