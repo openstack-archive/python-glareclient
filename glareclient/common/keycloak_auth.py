@@ -15,6 +15,9 @@
 import logging
 import pprint
 import requests
+from six.moves import urllib
+
+from glareclient.common import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -29,8 +32,8 @@ def authenticate(**kwargs):
     :param username: User name (Optional, if None then access_token must be
             provided).
     :param password: Password (Optional).
+    :param cacert: SSL certificate file (Optional).
     :param insecure: If True, SSL certificate is not verified (Optional).
-
     """
     auth_url = kwargs.get('auth_url')
     client_id = kwargs.get('client_id')
@@ -38,6 +41,7 @@ def authenticate(**kwargs):
     username = kwargs.get('username')
     password = kwargs.get('password')
     insecure = kwargs.get('insecure', False)
+    cacert = kwargs.get('cacert', utils.get_system_ca_file())
 
     if not auth_url:
         raise ValueError('Base authentication url is not provided.')
@@ -59,6 +63,10 @@ def authenticate(**kwargs):
         (auth_url, realm_name)
     )
 
+    verify = None
+    if urllib.parse.urlparse(access_token_endpoint).scheme == "https":
+        verify = False if insecure else cacert
+
     body = {
         'grant_type': 'password',
         'username': username,
@@ -70,7 +78,7 @@ def authenticate(**kwargs):
     resp = requests.post(
         access_token_endpoint,
         data=body,
-        verify=not insecure
+        verify=verify
     )
 
     try:

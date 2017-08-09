@@ -15,7 +15,6 @@
 
 import copy
 import hashlib
-import os
 import socket
 
 from keystoneauth1 import adapter
@@ -28,28 +27,11 @@ from six.moves import urllib
 
 from glareclient.common import exceptions as exc
 from glareclient.common import keycloak_auth
+from glareclient.common import utils
 
 LOG = logging.getLogger(__name__)
 USER_AGENT = 'python-glareclient'
 CHUNKSIZE = 1024 * 64  # 64kB
-
-
-def get_system_ca_file():
-    """Return path to system default CA file."""
-    # Standard CA file locations for Debian/Ubuntu, RedHat/Fedora,
-    # Suse, FreeBSD/OpenBSD, MacOSX, and the bundled ca
-    ca_path = ['/etc/ssl/certs/ca-certificates.crt',
-               '/etc/pki/tls/certs/ca-bundle.crt',
-               '/etc/ssl/ca-bundle.pem',
-               '/etc/ssl/cert.pem',
-               '/System/Library/OpenSSL/certs/cacert.pem',
-               requests.certs.where()]
-    for ca in ca_path:
-        LOG.debug("Looking for ca file %s", ca)
-        if os.path.exists(ca):
-            LOG.debug("Using ca file %s", ca)
-            return ca
-    LOG.warning("System ca file could not be found.")
 
 
 def _handle_response(resp):
@@ -113,7 +95,8 @@ class HTTPClient(object):
             if kwargs.get('insecure'):
                 self.verify_cert = False
             else:
-                self.verify_cert = kwargs.get('cacert', get_system_ca_file())
+                self.verify_cert = kwargs.get(
+                    'cacert', utils.get_system_ca_file())
 
     def _safe_header(self, name, value):
         if name in ['X-Auth-Token', 'X-Subject-Token']:
@@ -332,14 +315,14 @@ def construct_http_client(*args, **kwargs):
         parameters.update(kwargs)
         return SessionClient(**parameters)
     elif endpoint:
-        realm_name = kwargs.pop('keycloak_realm_name', None)
         if keycloak_auth_url:
             kwargs['auth_token'] = keycloak_auth.authenticate(
                 auth_url=keycloak_auth_url,
                 client_id=kwargs.pop('openid_client_id', None),
                 username=kwargs.pop('keycloak_username', None),
                 password=kwargs.pop('keycloak_password', None),
-                realm_name=realm_name
+                realm_name=kwargs.pop('keycloak_realm_name', None),
+                **kwargs
             )
         else:
             kwargs['auth_token'] = auth_token

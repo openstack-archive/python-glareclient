@@ -19,6 +19,7 @@ import testtools
 
 from glareclient.common import exceptions as exc
 from glareclient.common import http
+from glareclient.common import utils
 from glareclient.tests.unit import fakes
 
 
@@ -420,7 +421,7 @@ class HttpClientTest(testtools.TestCase):
         with mock.patch('os.path.exists') as mock_os:
             mock_os.return_value = chosen
 
-            ca = http.get_system_ca_file()
+            ca = utils.get_system_ca_file()
             self.assertEqual(chosen, ca)
 
             mock_os.assert_called_once_with(chosen)
@@ -433,7 +434,7 @@ class HttpClientTest(testtools.TestCase):
         client = http.HTTPClient('https://foo', cacert="NOWHERE")
         self.assertEqual("NOWHERE", client.verify_cert)
 
-        with mock.patch('glareclient.common.http.get_system_ca_file') as gsf:
+        with mock.patch('glareclient.common.utils.get_system_ca_file') as gsf:
             gsf.return_value = "SOMEWHERE"
             client = http.HTTPClient('https://foo')
             self.assertEqual("SOMEWHERE", client.verify_cert)

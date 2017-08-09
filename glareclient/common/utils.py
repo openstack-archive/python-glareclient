@@ -25,11 +25,15 @@ if os.name == 'nt':
 else:
     msvcrt = None
 
+from oslo_log import log as logging
 from oslo_utils import encodeutils
 from oslo_utils import importutils
 import requests
 
 from glareclient import exc
+
+LOG = logging.getLogger(__name__)
+
 
 SENSITIVE_HEADERS = ('X-Auth-Token', )
 
@@ -173,3 +177,21 @@ def get_artifact_id(client, parsed_args):
             type_name=parsed_args.type_name)['id']
     except exc.BadRequest as e:
         exit(msg=e.details)
+
+
+def get_system_ca_file():
+    """Return path to system default CA file."""
+    # Standard CA file locations for Debian/Ubuntu, RedHat/Fedora,
+    # Suse, FreeBSD/OpenBSD, MacOSX, and the bundled ca
+    ca_path = ['/etc/ssl/certs/ca-certificates.crt',
+               '/etc/pki/tls/certs/ca-bundle.crt',
+               '/etc/ssl/ca-bundle.pem',
+               '/etc/ssl/cert.pem',
+               '/System/Library/OpenSSL/certs/cacert.pem',
+               requests.certs.where()]
+    for ca in ca_path:
+        LOG.debug("Looking for ca file %s", ca)
+        if os.path.exists(ca):
+            LOG.debug("Using ca file %s", ca)
+            return ca
+    LOG.warning("System ca file could not be found.")
