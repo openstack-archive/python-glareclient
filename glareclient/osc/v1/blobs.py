@@ -275,3 +275,52 @@ class AddLocation(command.ShowOne):
         else:
             data_to_display.update(data[parsed_args.blob_property])
         return self.dict2columns(data_to_display)
+
+
+class RemoveLocation(command.ShowOne):
+    """Remove external location"""
+
+    def get_parser(self, prog_name):
+        parser = super(RemoveLocation, self).get_parser(prog_name)
+        parser.add_argument(
+            'type_name',
+            metavar='<TYPE_NAME>',
+            action=TypeMapperAction,
+            help='Name of artifact type.',
+        ),
+        parser.add_argument(
+            'name',
+            metavar='<NAME>',
+            help='Name or id of the artifact to download.',
+        ),
+        parser.add_argument(
+            '--artifact-version', '-V',
+            metavar='<VERSION>',
+            default='latest',
+            help='Version of the artifact.',
+        ),
+        parser.add_argument(
+            '--id', '-i',
+            action='store_true',
+            help='The specified id of the artifact.',
+        ),
+        parser.add_argument(
+            '--blob-property', '-p',
+            metavar='<BLOB_PROPERTY>',
+            help='Name of the blob field.'
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        LOG.debug('take_action({0})'.format(parsed_args))
+        client = self.app.client_manager.artifact
+        af_id = utils.get_artifact_id(client, parsed_args)
+
+        if not parsed_args.blob_property:
+            parsed_args.blob_property = _default_blob_property(
+                parsed_args.type_name)
+
+        client.artifacts.remove_external_location(
+            af_id,
+            parsed_args.blob_property,
+            type_name=parsed_args.type_name)

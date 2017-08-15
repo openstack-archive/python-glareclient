@@ -180,6 +180,16 @@ class TestController(testtools.TestCase):
                      'application/vnd+openstack.glare-custom-location+json'})
         self.assertIsNone(resp)
 
+    def test_remove_external_location(self):
+        art_id = '3a4560a1-e585-443e-9b39-553b46ec92a8'
+        resp = self.c.remove_external_location(
+            art_id, 'image',
+            type_name='images')
+        self.c.http_client.delete.assert_called_once_with(
+            '/artifacts/checked_name/'
+            '3a4560a1-e585-443e-9b39-553b46ec92a8/image')
+        self.assertIsNone(resp)
+
     def test_add_tag(self):
         art_id = '07a679d8-d0a8-45ff-8d6e-2f32f2097b7c'
         d = {'tags': ['a', 'b', 'c']}
