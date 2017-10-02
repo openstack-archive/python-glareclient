@@ -65,7 +65,7 @@ def authenticate(**kwargs):
 
     verify = None
     if urllib.parse.urlparse(access_token_endpoint).scheme == "https":
-        verify = False if insecure else cacert
+        verify = False if insecure else cacert if cacert else True
 
     body = {
         'grant_type': 'password',
