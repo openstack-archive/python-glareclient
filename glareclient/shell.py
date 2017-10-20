@@ -1,4 +1,4 @@
-# Copyright 2015 - StackStorm, Inc.
+# Copyright 2017 - Nokia Networks
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -261,17 +261,28 @@ class GlareShell(app.App):
         self._clear_shell_commands()
         self._set_shell_commands(self._get_commands())
 
-        do_help = ('help' in argv) or ('-h' in argv) or not argv
+        # bash-completion and help messages should not require client creation
+        need_client = not (
+            ('bash-completion' in argv) or
+            ('help' in argv) or
+            ('-h' in argv) or
+            ('--help' in argv) or
+            not argv)
 
-        # Set default for auth_url if not supplied. The default is not
-        # set at the parser to support use cases where auth is not enabled.
-        # An example use case would be a developer's environment.
+        self.client = self._create_client() if need_client else None
 
-        # bash-completion should not require authentification.
-        if do_help or ('bash-completion' in argv):
-            self.options.auth_url = None
+        # Adding client_manager variable to make glare client work with
+        # unified OpenStack client.
+        ClientManager = type(
+            'ClientManager',
+            (object,),
+            dict(artifact=self.client)
+        )
 
-        self.client = client.Client(
+        self.client_manager = ClientManager()
+
+    def _create_client(self):
+        return client.Client(
             endpoint=self.options.glare_url,
             auth_token=self.options.auth_token,
             keycloak_auth_url=self.options.keycloak_auth_url,
@@ -284,16 +295,6 @@ class GlareShell(app.App):
             cacert=self.options.cacert,
             insecure=self.options.insecure
         )
-
-        # Adding client_manager variable to make glare client work with
-        # unified OpenStack client.
-        ClientManager = type(
-            'ClientManager',
-            (object,),
-            dict(artifact=self.client)
-        )
-
-        self.client_manager = ClientManager()
 
     def _set_shell_commands(self, cmds_dict):
         for k, v in cmds_dict.items():
