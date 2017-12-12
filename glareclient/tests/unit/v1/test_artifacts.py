@@ -70,12 +70,30 @@ class TestController(testtools.TestCase):
             '/artifacts/checked_name/test-id')
         self.c._check_type_name.assert_called_once_with('test_name')
 
-    def test_list(self):
+    def test_list_legacy(self):
         self.mock_http_client.get.side_effect = [
             (None, {'checked_name': [10, 11, 12], "next": "next1"}),
             (None, {'checked_name': [13, 14, 15], "next": "next2"}),
             (None, {'checked_name': [16, 17, 18], "next": "next3"}),
             (None, {'checked_name': [19, 20, 21]}),
+        ]
+        data = list(self.c.list(type_name='test-type', limit=10, page_size=3))
+        expected = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+        self.assertEqual(expected, data)
+        expected_calls = [
+            mock.call.get('/artifacts/checked_name?&limit=3'),
+            mock.call.get('next1'),
+            mock.call.get('next2'),
+            mock.call.get('next3'),
+        ]
+        self.assertEqual(expected_calls, self.mock_http_client.mock_calls)
+
+    def test_list(self):
+        self.mock_http_client.get.side_effect = [
+            (None, {'artifacts': [10, 11, 12], "next": "next1"}),
+            (None, {'artifacts': [13, 14, 15], "next": "next2"}),
+            (None, {'artifacts': [16, 17, 18], "next": "next3"}),
+            (None, {'artifacts': [19, 20, 21]}),
         ]
         data = list(self.c.list(type_name='test-type', limit=10, page_size=3))
         expected = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]

@@ -161,7 +161,11 @@ class Controller(object):
                                                 "limit=%s" % limit)
 
                 resp, body = self.http_client.get(next_url)
-                for artifact in body[type_name]:
+
+                # For backward compatibility we also look for the list of
+                # artifacts under the type_name section.
+                # In current versions it should be located in 'artifacts'.
+                for artifact in body.get('artifacts', body.get(type_name)):
                     yield artifact
 
                     if limit:
