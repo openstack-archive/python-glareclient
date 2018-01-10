@@ -75,7 +75,7 @@ class ListArtifacts(command.Lister):
             help='Filtering artifact list by a user-defined property.',
         )
         parser.add_argument(
-            '--sort', '-s',
+            '--sort', '-S',
             default='name:asc',
             metavar='<key>[:<direction>]',
             help='Comma-separated list of sort keys and directions in the '
