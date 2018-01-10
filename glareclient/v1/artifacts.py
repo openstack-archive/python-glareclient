@@ -118,7 +118,7 @@ class Controller(object):
         type_name = self._check_type_name(type_name)
         url = '/artifacts/%s?version=%s&name=%s' % (type_name, version, name)
         resp, body = self.http_client.get(url)
-        arts = body[type_name]
+        arts = body.get('artifacts', body.get(type_name))
         if not arts:
             msg = ('Artifact with name=%s and version=%s not found.' %
                    (name, version))
@@ -138,7 +138,7 @@ class Controller(object):
                 ' Please provide the concrete id from the list:\n%s' %
                 (name, version, output))
             raise exc.BadRequest(msg)
-        return body[type_name][0]
+        return arts[0]
 
     def list(self, type_name=None, **kwargs):
         """Retrieve a listing of artifacts objects.
