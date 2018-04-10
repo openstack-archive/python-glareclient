@@ -81,6 +81,11 @@ class ListArtifacts(command.Lister):
             help='Comma-separated list of sort keys and directions in the '
                  'form of <key>[:<asc|desc>].',
         )
+        parser.add_argument(
+            '--marker', '-m',
+            metavar='<MARKER>',
+            help="id of last artifact in previous list request"
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -89,7 +94,8 @@ class ListArtifacts(command.Lister):
         params = {'limit': parsed_args.limit,
                   'filters': [f.split('=', 1) for f in parsed_args.filter],
                   'sort': parsed_args.sort,
-                  'page_size': parsed_args.page_size}
+                  'page_size': parsed_args.page_size,
+                  'marker': parsed_args.marker}
 
         type_name = parsed_args.type_name
 

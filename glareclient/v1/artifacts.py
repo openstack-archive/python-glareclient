@@ -180,6 +180,8 @@ class Controller(object):
 
         filters = kwargs.get('filters', [])
         filters.append(('limit', page_size))
+        if kwargs.get('marker'):
+            filters.append(('marker', kwargs.get('marker')))
 
         url_params = []
         for param, items in filters:
