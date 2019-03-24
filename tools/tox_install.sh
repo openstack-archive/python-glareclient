@@ -35,7 +35,7 @@ if [ $CONSTRAINTS_FILE != "unconstrained" ]; then
         $ZUUL_CLONER --cache-dir \
             /opt/git \
             --branch $BRANCH_NAME \
-            git://git.openstack.org \
+            https://git.openstack.org \
             openstack/requirements
         cd openstack/requirements
         $install_cmd -e .
